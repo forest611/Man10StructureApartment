@@ -1,0 +1,4 @@
+name: Man10StructureApartment
+version: '${version}'
+main: red.man10.man10structureapartment.Man10StructureApartment
+api-version: 1.19
