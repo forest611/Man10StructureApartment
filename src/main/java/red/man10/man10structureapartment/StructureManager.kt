@@ -3,6 +3,7 @@ package red.man10.man10structureapartment
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.World
 import org.bukkit.block.structure.Mirror
 import org.bukkit.block.structure.StructureRotation
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.instance
@@ -14,23 +15,56 @@ import kotlin.math.min
 
 object StructureManager {
 
+    var distance = 64
+    lateinit var world: World
 
-    fun getApartInfo(apartName: String){
 
+    //  開いているマンションの数などを呼び出す
+    private fun getApartCount():Int{
+
+
+        return 0
+    }
+
+    private fun getInfo(uuid:UUID):Pair<Location,Location>?{
+
+        val pos1 = instance.config.getLocation("${uuid}.Pos1")
+        val pos2 = instance.config.getLocation("${uuid}.Pos2")
+
+        if (pos1 == null || pos2 == null)return null
+
+        return Pair(pos1,pos2)
+    }
+
+    private fun setInfo(uuid:UUID,pos1:Location,pos2:Location){
+
+        instance.config.set("${uuid}.Pos1",pos1)
+        instance.config.set("${uuid}.Pos2",pos2)
+
+        instance.saveConfig()
+    }
+
+    private fun removeInfo(uuid: UUID){
+        instance.config.set("$uuid",null)
+        instance.saveConfig()
     }
 
     //  ストラクチャーの保存
-    //  ownerがnullの場合は、初期建築を保存する
-    fun save(pos1:Location,pos2:Location,apartName:String,owner:UUID?){
+    fun save(owner:UUID){
 
         val manager = instance.server.structureManager
         val structure = manager.createStructure()
 
+        val pair = getInfo(owner)?:return
+
+        val pos1 = pair.first
+        val pos2 = pair.second
+
         structure.fill(pos1,pos2,true)
 
-        val fileName = owner?.toString() ?: "Default"
+        val fileName = owner.toString()
 
-        val file = File("${instance.dataFolder.path}/${apartName}/${fileName}")
+        val file = File("${instance.dataFolder.path}/${fileName}")
 
         try {
             if (!file.exists()){
@@ -40,19 +74,24 @@ object StructureManager {
                 manager.saveStructure(file,structure)
             }
         }catch (e:Exception){
-            Bukkit.getLogger().warning("書き込みエラー アパート名:${apartName} 持ち主:${owner}")
+            Bukkit.getLogger().warning("書き込みエラー 持ち主:${owner}")
         }
     }
 
     //  ストラクチャーの呼び出し
-    fun place(owner: UUID,apartName: String,pos:Location){
+    fun place(owner: UUID){
+
+        if (getInfo(owner)!=null)return
+
+        val pos = Location(world,(getApartCount() * distance).toDouble(),60.0,0.0)
+
         val manager = instance.server.structureManager
-        val file = File("${instance.dataFolder.path}/${apartName}/${owner}")
+        val file = File("${instance.dataFolder.path}/${owner}")
 
         val structure = if (file.exists()){
             manager.loadStructure(file)
         } else {
-            val default = File("${instance.dataFolder.path}/${apartName}/Default")
+            val default = File("${instance.dataFolder.path}/Default")
             if (!default.exists()){
                 Bukkit.getLogger().warning("初期建築がありません")
                 return
@@ -91,6 +130,4 @@ object StructureManager {
             }
         }
     }
-
-
 }

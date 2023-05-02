@@ -4,6 +4,8 @@ import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
+import red.man10.man10structureapartment.StructureManager.distance
+import red.man10.man10structureapartment.StructureManager.world
 
 class Man10StructureApartment : JavaPlugin() {
 
@@ -13,6 +15,11 @@ class Man10StructureApartment : JavaPlugin() {
 
     override fun onEnable() {
         // Plugin startup logic
+        saveDefaultConfig()
+
+        distance = config.getInt("Distance")
+        world = instance.server.getWorld(config.getString("BuilderWorld")?:"builder")!!
+
         instance = this
         getCommand("msa")!!.setExecutor(this)
     }
@@ -36,17 +43,13 @@ class Man10StructureApartment : JavaPlugin() {
             }
 
             "load"->{
-
             }
 
-
+            "jump" ->{
+            }
         }
 
         return true
     }
 
-    fun loadApartment(p:Player){
-
-
-    }
 }
