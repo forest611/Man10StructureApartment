@@ -16,6 +16,7 @@ import java.io.FileReader
 import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.max
 import kotlin.math.min
 
@@ -27,7 +28,7 @@ object StructureManager {
     var dailyRent = 1000.0
     lateinit var world: World
 
-    private var addressMap = HashMap<UUID,ApartData>()
+    private var addressMap = ConcurrentHashMap<UUID,ApartData>()
     private lateinit var manager : StructureManager
     private lateinit var defaultBuilding : Structure
     private lateinit var vault : VaultManager
@@ -171,7 +172,10 @@ object StructureManager {
             manager.loadStructure(default)
         }
 
-        structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,-1,1F, Random())
+        Bukkit.getScheduler().runTask(instance, Runnable {
+            structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,-1,1F, Random())
+        })
+
 
         val pos2 = pos1.clone()
 
@@ -205,22 +209,25 @@ object StructureManager {
         val maxY = max(pos1.blockY,pos2.blockY)
         val maxZ = max(pos1.blockZ,pos2.blockZ)
 
-        //エンティティを削除
-        for (e in world.entities){
-            val loc = e.location
-            if (loc.blockX in minX..maxX && loc.blockY in minY..maxY && loc.blockZ in minZ .. maxZ){
-                e.remove()
-            }
-        }
-
-        //ブロックを削除
-        for (x in minX..maxX) {
-            for (y in minY..maxY) {
-                for (z in minZ..maxZ) {
-                    world.getBlockAt(x, y, z).type = Material.AIR
+        Bukkit.getScheduler().runTask(instance, Runnable {
+            //エンティティを削除
+            for (e in world.entities){
+                val loc = e.location
+                if (loc.blockX in minX..maxX && loc.blockY in minY..maxY && loc.blockZ in minZ .. maxZ){
+                    e.remove()
                 }
             }
-        }
+
+            //ブロックを削除
+            for (x in minX..maxX) {
+                for (y in minY..maxY) {
+                    for (z in minZ..maxZ) {
+                        world.getBlockAt(x, y, z).type = Material.AIR
+                    }
+                }
+            }
+
+        })
 
         addressMap.remove(owner)
         saveAddress()
