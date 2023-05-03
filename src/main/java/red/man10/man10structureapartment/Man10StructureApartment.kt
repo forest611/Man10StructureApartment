@@ -9,16 +9,20 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.distance
 import red.man10.man10structureapartment.StructureManager.maxApartCount
+import red.man10.man10structureapartment.StructureManager.saveStructure
 import red.man10.man10structureapartment.StructureManager.world
+import java.util.concurrent.Executors
 
 class Man10StructureApartment : JavaPlugin(),Listener {
 
     companion object{
         lateinit var instance : Man10StructureApartment
+        private val threadPool = Executors.newSingleThreadExecutor()
 
         private const val PERMISSION = "man10apart.op"
 
@@ -80,7 +84,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             }
 
             "remove" ->{
-                StructureManager.remove(sender.uniqueId)
+                StructureManager.removeStructure(sender.uniqueId)
             }
 
             "jump" ->{
@@ -130,23 +134,14 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             StructureManager.saveDefault(p,pos1, pos2)
         }
 
-        //Spawn
-//        if (mode == 3){
-//            e.isCancelled = true
-//
-//            val pos1Str = p.persistentDataContainer[NamespacedKey(this,"Pos1"), PersistentDataType.STRING]?:return
-//            val pos2Str = p.persistentDataContainer[NamespacedKey(this,"Pos2"), PersistentDataType.STRING]?:return
-//            val pos1 = strToLoc(pos1Str)
-//            val pos2 = strToLoc(pos2Str)
-//            val spawn = p.location
-//
-//            p.persistentDataContainer.remove(NamespacedKey(this,"Pos1"))
-//            p.persistentDataContainer.remove(NamespacedKey(this,"Pos2"))
-//            p.persistentDataContainer.remove(NamespacedKey(this,"SetDefault"))
-//
-//            p.sendMessage("スポーンを設定")
-//
-//            StructureManager.saveDefault(p,pos1, pos2,spawn)
-//        }
+    }
+
+    @EventHandler
+    fun logout(e:PlayerQuitEvent){
+
+        //ログアウト時にアパート情報の保存をする
+        threadPool.execute {
+            saveStructure(e.player)
+        }
     }
 }

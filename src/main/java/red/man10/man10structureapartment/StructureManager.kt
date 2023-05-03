@@ -103,9 +103,9 @@ object StructureManager {
     //  ストラクチャーの保存
     fun saveStructure(p:Player){
 
-        val structure = manager.createStructure()
-
         val data = addressMap[p.uniqueId]?:return
+
+        val structure = manager.createStructure()
 
         val pos1 = strToLoc(data.pos1)
         val pos2 = strToLoc(data.pos2)
@@ -148,7 +148,7 @@ object StructureManager {
                 return
             }
 
-            remove(oldestData.owner)
+            removeStructure(oldestData.owner)
             pos1 = strToLoc(oldestData.pos1)
         }
 
@@ -180,7 +180,7 @@ object StructureManager {
     }
 
     //土地を削除する
-    fun remove(owner: UUID){
+    fun removeStructure(owner: UUID){
 
         val data = addressMap[owner]?:return
 
