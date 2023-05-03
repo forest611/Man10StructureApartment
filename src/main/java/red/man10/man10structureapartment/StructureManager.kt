@@ -14,6 +14,7 @@ import red.man10.man10structureapartment.Man10StructureApartment.Companion.strTo
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
@@ -241,7 +242,7 @@ object StructureManager {
         addressMap[p.uniqueId] = data
         saveStructure(p)
 
-        p.sendMessage("利用料の支払いを行いました")
+        p.sendMessage("利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("yyyy-MM-dd")}まで)")
     }
 
     fun jump(p:Player){
@@ -249,7 +250,9 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data == null){
-            p.sendMessage("あなたはマンションを借りていません")
+//            p.sendMessage("あなたはマンションを借りていません")
+            placeStructure(p)
+            jump(p)
             return
         }
 

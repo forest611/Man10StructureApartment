@@ -44,8 +44,11 @@ class Man10StructureApartment : JavaPlugin(),Listener {
         maxApartCount = config.getInt("MaxApartCount")
         world = server.getWorld(config.getString("BuilderWorld")?:"world")!!
 
+        MenuFramework.setup(this)
+
         getCommand("msa")!!.setExecutor(this)
         server.pluginManager.registerEvents(this,this)
+        server.pluginManager.registerEvents(MenuFramework.MenuListener,this)
 
         StructureManager.load()
     }
@@ -71,11 +74,16 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             return true
         }
 
-        if (!sender.hasPermission(PERMISSION))return true
 
         when(args[0]){
 
+            "menu"->{
+                MainMenu(sender).open()
+            }
+
             "save"->{
+
+                if (!sender.hasPermission(PERMISSION))return true
                 threadPool.execute {
                     saveStructure(sender)
                 }
@@ -83,12 +91,14 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
             "place"->{
 
+                if (!sender.hasPermission(PERMISSION))return true
                 threadPool.execute {
                     StructureManager.placeStructure(sender)
                 }
             }
 
             "remove" ->{
+                if (!sender.hasPermission(PERMISSION))return true
                 threadPool.execute {
                     StructureManager.removeStructure(sender.uniqueId)
                 }
@@ -106,6 +116,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             }
 
             "default" ->{
+                if (!sender.hasPermission(PERMISSION))return true
                 sender.persistentDataContainer.set(NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER,1)
                 sender.sendMessage("始点と終点を殴って範囲を指定する")
             }
