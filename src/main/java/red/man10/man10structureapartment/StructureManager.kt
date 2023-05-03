@@ -32,15 +32,24 @@ object StructureManager {
     private lateinit var manager : StructureManager
     private lateinit var defaultBuilding : Structure
     private lateinit var vault : VaultManager
+    private lateinit var jump : Triple<Double,Double,Double>
 
     fun load(){
         manager = instance.server.structureManager
         vault = VaultManager(instance)
 
+        instance.reloadConfig()
+
         distance = instance.config.getInt("Distance")
         maxApartCount = instance.config.getInt("MaxApartCount")
         dailyRent = instance.config.getDouble("DailyRent")
         world = instance.server.getWorld(instance.config.getString("BuilderWorld")?:"world")!!
+
+        val relativeX = instance.config.getDouble("RelativeX")
+        val relativeY = instance.config.getDouble("RelativeY")
+        val relativeZ = instance.config.getDouble("RelativeZ")
+
+        jump = Triple(relativeX,relativeY,relativeZ)
 
         loadDefault()
         loadAddress()
@@ -284,9 +293,13 @@ object StructureManager {
         val pos1 = strToLoc(data.pos1)
         val pos2 = strToLoc(data.pos2)
 
-        val spawnX = (pos1.x + pos2.x)/2.0
-        val spawnY = (pos1.y + pos2.y)/2.0
-        val spawnZ = (pos1.z + pos2.z)/2.0
+//        val spawnX = (pos1.x + pos2.x)/2.0
+//        val spawnY = (pos1.y + pos2.y)/2.0
+//        val spawnZ = (pos1.z + pos2.z)/2.0
+//
+        val spawnX = pos1.x+ jump.first
+        val spawnY = pos1.y+ jump.second
+        val spawnZ = pos1.z+ jump.third
 
         val loc = Location(pos1.world,spawnX,spawnY,spawnZ)
 
