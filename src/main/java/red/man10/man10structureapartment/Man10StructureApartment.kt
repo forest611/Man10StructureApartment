@@ -83,8 +83,6 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
             "place"->{
 
-                val day = args[1].toIntOrNull()?:return true
-
                 threadPool.execute {
                     StructureManager.placeStructure(sender)
                 }
@@ -93,6 +91,13 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             "remove" ->{
                 threadPool.execute {
                     StructureManager.removeStructure(sender.uniqueId)
+                }
+            }
+
+            "pay" ->{
+                val day = args[1].toInt()
+                threadPool.execute{
+                    StructureManager.addPayment(sender,day)
                 }
             }
 

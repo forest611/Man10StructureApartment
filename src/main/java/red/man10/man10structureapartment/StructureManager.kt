@@ -5,6 +5,7 @@ import org.bukkit.*
 import org.bukkit.block.structure.Mirror
 import org.bukkit.block.structure.StructureRotation
 import org.bukkit.entity.Player
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.structure.Structure
 import org.bukkit.structure.StructureManager
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.instance
@@ -22,14 +23,17 @@ object StructureManager {
 
     var distance = 64
     var maxApartCount = 128
+    var dailyRent = 1000.0
     lateinit var world: World
 
     private var addressMap = HashMap<UUID,ApartData>()
     private lateinit var manager : StructureManager
     private lateinit var defaultBuilding : Structure
+    private lateinit var vault : VaultManager
 
     fun load(){
         manager = instance.server.structureManager
+        vault = VaultManager(instance)
         loadDefault()
         loadAddress()
     }
@@ -111,6 +115,7 @@ object StructureManager {
         val pos2 = strToLoc(data.pos2)
 
         structure.fill(pos1,pos2,true)
+        structure.persistentDataContainer.set(NamespacedKey(instance,"RentDue"), PersistentDataType.LONG,data.rentDue.time)
 
         val file = File("${instance.dataFolder.path}/Apart/${p.uniqueId}")
 
@@ -173,8 +178,11 @@ object StructureManager {
         pos2.y+=structure.size.y
         pos2.z+=structure.size.z
 
+        val date = Date()
+        date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
+
         //住所情報をJsonファイルに登録
-        update(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),null))
+        update(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),date))
 
         p.sendMessage("設置完了")
     }
@@ -217,6 +225,25 @@ object StructureManager {
         saveAddress()
     }
 
+    fun addPayment(p:Player,day:Int){
+
+        if (!vault.withdraw(p.uniqueId,day* dailyRent)){
+            p.sendMessage("電子マネーが足りません")
+            return
+        }
+
+        val data = addressMap[p.uniqueId]?:return
+        val cal = Calendar.getInstance()
+        cal.time = data.rentDue
+        cal.add(Calendar.MINUTE,day)
+        data.rentDue = cal.time
+
+        addressMap[p.uniqueId] = data
+        saveStructure(p)
+
+        p.sendMessage("利用料の支払いを行いました")
+    }
+
     fun jump(p:Player){
 
         val data = addressMap[p.uniqueId]
@@ -226,13 +253,17 @@ object StructureManager {
             return
         }
 
+        if (Date().after(data.rentDue)){
+            p.sendMessage("利用料の支払いがされていません！")
+            return
+        }
+
         val pos1 = strToLoc(data.pos1)
         val pos2 = strToLoc(data.pos2)
 
         val spawnX = (pos1.x + pos2.x)/2.0
         val spawnY = (pos1.y + pos2.y)/2.0
         val spawnZ = (pos1.z + pos2.z)/2.0
-
 
         val loc = Location(pos1.world,spawnX,spawnY,spawnZ)
 
@@ -245,5 +276,5 @@ data class ApartData(
     val pos1 : String,
     val pos2 : String,
     val lastAccess : Date,
-    val rentDue : Date?
+    var rentDue : Date
 )
