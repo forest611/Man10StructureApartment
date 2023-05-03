@@ -12,6 +12,7 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
+import red.man10.man10structureapartment.StructureManager.dailyRent
 import red.man10.man10structureapartment.StructureManager.distance
 import red.man10.man10structureapartment.StructureManager.maxApartCount
 import red.man10.man10structureapartment.StructureManager.saveStructure
@@ -42,6 +43,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
         distance = config.getInt("Distance")
         maxApartCount = config.getInt("MaxApartCount")
+        dailyRent = config.getDouble("DailyRent")
         world = server.getWorld(config.getString("BuilderWorld")?:"world")!!
 
         MenuFramework.setup(this)
