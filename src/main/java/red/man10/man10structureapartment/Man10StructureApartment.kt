@@ -20,6 +20,8 @@ class Man10StructureApartment : JavaPlugin(),Listener {
     companion object{
         lateinit var instance : Man10StructureApartment
 
+        private const val PERMISSION = "man10apart.op"
+
         fun locToStr(loc:Location):String{
             return "${loc.world.name};${loc.x};${loc.y};${loc.z}"
         }
@@ -53,8 +55,19 @@ class Man10StructureApartment : JavaPlugin(),Listener {
         if (sender !is Player)return true
 
         if (args.isNullOrEmpty()){
+
+            sender.sendMessage("""
+                /msa save...建築の保存
+                /msa place...建築の設置
+                /msa remove...建築の削除
+                /msa jump...建築にテレポート
+                /msa default...初期建築の設定
+            """.trimIndent())
+
             return true
         }
+
+        if (!sender.hasPermission(PERMISSION))return true
 
         when(args[0]){
 
@@ -85,11 +98,15 @@ class Man10StructureApartment : JavaPlugin(),Listener {
     @EventHandler
     fun breakEvent(e:BlockBreakEvent){
         val p = e.player
+        if (!p.hasPermission(PERMISSION))return
 
         val mode = p.persistentDataContainer[NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER] ?: return
 
         //POS1
         if (mode == 1){
+
+            e.isCancelled = true
+
             p.persistentDataContainer
                 .set(NamespacedKey(this,"Pos1"), PersistentDataType.STRING,locToStr(e.block.location))
             p.persistentDataContainer.set(NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER,2)
@@ -99,6 +116,8 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
         //POS2
         if (mode == 2){
+            e.isCancelled = true
+
             p.persistentDataContainer
                 .set(NamespacedKey(this,"Pos2"), PersistentDataType.STRING,locToStr(e.block.location))
             p.persistentDataContainer.set(NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER,3)
@@ -108,6 +127,8 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
         //Spawn
         if (mode == 3){
+            e.isCancelled = true
+
             val pos1Str = p.persistentDataContainer[NamespacedKey(this,"Pos1"), PersistentDataType.STRING]?:return
             val pos2Str = p.persistentDataContainer[NamespacedKey(this,"Pos2"), PersistentDataType.STRING]?:return
             val pos1 = strToLoc(pos1Str)
@@ -122,8 +143,5 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
             StructureManager.saveDefault(p,pos1, pos2,spawn)
         }
-
     }
-
-
 }
