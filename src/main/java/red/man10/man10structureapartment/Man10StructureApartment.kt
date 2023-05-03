@@ -84,6 +84,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             }
 
             "jump" ->{
+                StructureManager.jump(sender)
             }
 
             "default" ->{
@@ -118,30 +119,34 @@ class Man10StructureApartment : JavaPlugin(),Listener {
         if (mode == 2){
             e.isCancelled = true
 
-            p.persistentDataContainer
-                .set(NamespacedKey(this,"Pos2"), PersistentDataType.STRING,locToStr(e.block.location))
-            p.persistentDataContainer.set(NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER,3)
-            p.sendMessage("終点を設定 スポーン地点を殴る(殴った時のあなたの位置がスポーン地点になる)")
-            return
+            val pos1Str = p.persistentDataContainer[NamespacedKey(this,"Pos1"), PersistentDataType.STRING]?:return
+            val pos1 = strToLoc(pos1Str)
+            val pos2 = e.block.location
+
+            p.persistentDataContainer.remove(NamespacedKey(this,"Pos1"))
+            p.persistentDataContainer.remove(NamespacedKey(this,"SetDefault"))
+
+
+            StructureManager.saveDefault(p,pos1, pos2)
         }
 
         //Spawn
-        if (mode == 3){
-            e.isCancelled = true
-
-            val pos1Str = p.persistentDataContainer[NamespacedKey(this,"Pos1"), PersistentDataType.STRING]?:return
-            val pos2Str = p.persistentDataContainer[NamespacedKey(this,"Pos2"), PersistentDataType.STRING]?:return
-            val pos1 = strToLoc(pos1Str)
-            val pos2 = strToLoc(pos2Str)
-            val spawn = p.location
-
-            p.persistentDataContainer.remove(NamespacedKey(this,"Pos1"))
-            p.persistentDataContainer.remove(NamespacedKey(this,"Pos2"))
-            p.persistentDataContainer.remove(NamespacedKey(this,"SetDefault"))
-
-            p.sendMessage("スポーンを設定")
-
-            StructureManager.saveDefault(p,pos1, pos2,spawn)
-        }
+//        if (mode == 3){
+//            e.isCancelled = true
+//
+//            val pos1Str = p.persistentDataContainer[NamespacedKey(this,"Pos1"), PersistentDataType.STRING]?:return
+//            val pos2Str = p.persistentDataContainer[NamespacedKey(this,"Pos2"), PersistentDataType.STRING]?:return
+//            val pos1 = strToLoc(pos1Str)
+//            val pos2 = strToLoc(pos2Str)
+//            val spawn = p.location
+//
+//            p.persistentDataContainer.remove(NamespacedKey(this,"Pos1"))
+//            p.persistentDataContainer.remove(NamespacedKey(this,"Pos2"))
+//            p.persistentDataContainer.remove(NamespacedKey(this,"SetDefault"))
+//
+//            p.sendMessage("スポーンを設定")
+//
+//            StructureManager.saveDefault(p,pos1, pos2,spawn)
+//        }
     }
 }

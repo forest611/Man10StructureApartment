@@ -5,6 +5,7 @@ import org.bukkit.*
 import org.bukkit.block.structure.Mirror
 import org.bukkit.block.structure.StructureRotation
 import org.bukkit.entity.Player
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.structure.Structure
 import org.bukkit.structure.StructureManager
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.instance
@@ -42,9 +43,10 @@ object StructureManager {
             return
         }
         defaultBuilding = manager.loadStructure(default)
+
     }
 
-    fun saveDefault(p:Player, pos1:Location, pos2:Location,spawn:Location){
+    fun saveDefault(p:Player, pos1:Location, pos2:Location){
         val structure = manager.createStructure()
         structure.fill(pos1,pos2,true)
 
@@ -219,8 +221,17 @@ object StructureManager {
             return
         }
 
+        val pos1 = strToLoc(data.pos1)
+        val pos2 = strToLoc(data.pos2)
+
+        val spawnX = (pos1.x + pos2.x)/2.0
+        val spawnY = (pos1.y + pos2.y)/2.0
+        val spawnZ = (pos1.z + pos2.z)/2.0
 
 
+        val loc = Location(pos1.world,spawnX,spawnY,spawnZ)
+
+        p.teleport(loc)
     }
 }
 
