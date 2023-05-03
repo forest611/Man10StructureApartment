@@ -62,7 +62,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
             sender.sendMessage("""
                 /msa save...建築の保存
-                /msa place...建築の設置
+                /msa place <日数>...建築の設置(指定日数アクセスできる)
                 /msa remove...建築の削除
                 /msa jump...建築にテレポート
                 /msa default...初期建築の設定
@@ -76,15 +76,24 @@ class Man10StructureApartment : JavaPlugin(),Listener {
         when(args[0]){
 
             "save"->{
-                StructureManager.saveStructure(sender)
+                threadPool.execute {
+                    saveStructure(sender)
+                }
             }
 
             "place"->{
-                StructureManager.placeStructure(sender)
+
+                val day = args[1].toIntOrNull()?:return true
+
+                threadPool.execute {
+                    StructureManager.placeStructure(sender)
+                }
             }
 
             "remove" ->{
-                StructureManager.removeStructure(sender.uniqueId)
+                threadPool.execute {
+                    StructureManager.removeStructure(sender.uniqueId)
+                }
             }
 
             "jump" ->{
