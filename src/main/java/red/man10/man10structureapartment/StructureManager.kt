@@ -23,10 +23,10 @@ import kotlin.math.min
 
 object StructureManager {
 
-    var distance = 64
-    var maxApartCount = 128
+    private var distance = 64
+    private var maxApartCount = 128
     var dailyRent = 1000.0
-    lateinit var world: World
+    private lateinit var world: World
 
     private var addressMap = ConcurrentHashMap<UUID,ApartData>()
     private lateinit var manager : StructureManager
@@ -241,12 +241,19 @@ object StructureManager {
 
     fun addPayment(p:Player,day:Int){
 
+        val data = addressMap[p.uniqueId]
+
+        if (data==null){
+            placeStructure(p)
+            addPayment(p,day)
+            return
+        }
+
         if (!vault.withdraw(p.uniqueId,day* dailyRent)){
             p.sendMessage("電子マネーが足りません")
             return
         }
 
-        val data = addressMap[p.uniqueId]?:return
         val cal = Calendar.getInstance()
         cal.time = data.rentDue
         cal.add(Calendar.DAY_OF_YEAR,day)
