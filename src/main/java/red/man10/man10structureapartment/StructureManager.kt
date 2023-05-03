@@ -5,7 +5,6 @@ import org.bukkit.*
 import org.bukkit.block.structure.Mirror
 import org.bukkit.block.structure.StructureRotation
 import org.bukkit.entity.Player
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.structure.Structure
 import org.bukkit.structure.StructureManager
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.instance
@@ -138,11 +137,17 @@ object StructureManager {
         }
 
         //座標を仮設定(現在あるアパートの数から指定する
-        var pos1 = Location(world,(addressMap.size * distance).toDouble(),60.0,0.0)
+        var pos1 = Location(world,(addressMap.size * distance).toDouble(),100.0,0.0)
 
-        //最大数に達していたら、一番古いアパートを削除する
+        //最大数に達していたら、一番古いアパートと置き換える(そこの住人がオンラインだった場合は諦める)
         if (addressMap.size >= maxApartCount){
-            val oldestData = addressMap.values.minByOrNull { it.lastAccess }!!
+            val oldestData = addressMap.values.filter { Bukkit.getPlayer(it.owner)?.isOnline == false }.minByOrNull { it.lastAccess }
+
+            if (oldestData == null){
+                p.sendMessage("現在マンションは定員オーバーです")
+                return
+            }
+
             remove(oldestData.owner)
             pos1 = strToLoc(oldestData.pos1)
         }
@@ -169,7 +174,7 @@ object StructureManager {
         pos2.z+=structure.size.z
 
         //住所情報をJsonファイルに登録
-        update(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date()))
+        update(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),null))
 
         p.sendMessage("設置完了")
     }
@@ -239,5 +244,6 @@ data class ApartData(
     val owner : UUID,
     val pos1 : String,
     val pos2 : String,
-    val lastAccess : Date
+    val lastAccess : Date,
+    val rentDue : Date?
 )
