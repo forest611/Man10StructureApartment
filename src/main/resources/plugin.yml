@@ -2,6 +2,8 @@ name: Man10StructureApartment
 version: '1.0'
 main: red.man10.man10structureapartment.Man10StructureApartment
 api-version: 1.19
+softdepend:
+  - Man10CommonLibs
 commands:
   msa:
     description: Man10StructureApartment
