@@ -14,6 +14,7 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.dailyRent
 import red.man10.man10structureapartment.StructureManager.distance
+import red.man10.man10structureapartment.StructureManager.load
 import red.man10.man10structureapartment.StructureManager.maxApartCount
 import red.man10.man10structureapartment.StructureManager.saveStructure
 import red.man10.man10structureapartment.StructureManager.world
@@ -57,6 +58,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
     override fun onDisable() {
         // Plugin shutdown logic
+        threadPool.shutdown()
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>?): Boolean {
@@ -78,6 +80,14 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
 
         when(args[0]){
+
+            "reload" ->{
+                if (!sender.hasPermission(PERMISSION))return true
+                threadPool.execute {
+                    load()
+                }
+
+            }
 
             "menu"->{
                 MainMenu(sender).open()
