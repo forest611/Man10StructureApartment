@@ -36,6 +36,12 @@ object StructureManager {
     fun load(){
         manager = instance.server.structureManager
         vault = VaultManager(instance)
+
+        distance = instance.config.getInt("Distance")
+        maxApartCount = instance.config.getInt("MaxApartCount")
+        dailyRent = instance.config.getDouble("DailyRent")
+        world = instance.server.getWorld(instance.config.getString("BuilderWorld")?:"world")!!
+
         loadDefault()
         loadAddress()
     }
