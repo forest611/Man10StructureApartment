@@ -243,7 +243,7 @@ object StructureManager {
         val data = addressMap[p.uniqueId]?:return
         val cal = Calendar.getInstance()
         cal.time = data.rentDue
-        cal.add(Calendar.MINUTE,day)
+        cal.add(Calendar.DAY_OF_YEAR,day)
         data.rentDue = cal.time
 
         addressMap[p.uniqueId] = data
