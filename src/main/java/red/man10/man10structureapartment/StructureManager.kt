@@ -242,7 +242,7 @@ object StructureManager {
         addressMap[p.uniqueId] = data
         saveStructure(p)
 
-        p.sendMessage("利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("yyyy-MM-dd")}まで)")
+        p.sendMessage("利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("yyyy-MM-dd").format(data.rentDue)}まで)")
     }
 
     fun jump(p:Player){

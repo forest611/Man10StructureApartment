@@ -8,21 +8,21 @@ class MainMenu(p: Player) : MenuFramework(p, 9, "§b§l[CloudApartment]") {
     override fun init() {
         fill(Button(Material.CYAN_STAINED_GLASS_PANE))
 
-        val rentButton = Button(Material.DIAMOND)
-        rentButton.cmd(2)
+        val rentButton = Button(Material.GOLD_INGOT)
+        rentButton.cmd(1)
         rentButton.title("§e§l利用料を支払う(${StructureManager.dailyRent*30}円)")
         rentButton.lore(mutableListOf("§f30日分のマンション利用料を支払います"
             ,"§f30日を超えるとマンションの利用ができなくなります"))
         rentButton.setClickAction{
-            p.performCommand("/msa pay 30")
+            p.performCommand("msa pay 30")
         }
 
-        setButton(rentButton,3)
+        setButton(rentButton,2)
 
-        val jumpButton = Button(Material.CHEST)
+        val jumpButton = Button(Material.OAK_DOOR)
         jumpButton.title("§a§lマンションにテレポートする")
         jumpButton.setClickAction{
-            p.performCommand("/msa jump")
+            p.performCommand("msa jump")
         }
 
         setButton(jumpButton,6)
