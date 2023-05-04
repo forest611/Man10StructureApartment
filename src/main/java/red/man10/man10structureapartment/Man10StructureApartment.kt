@@ -2,15 +2,12 @@ package red.man10.man10structureapartment
 
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.NamespacedKey
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.load
 import red.man10.man10structureapartment.StructureManager.saveStructure
@@ -45,7 +42,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
         server.pluginManager.registerEvents(this,this)
         server.pluginManager.registerEvents(MenuFramework.MenuListener,this)
 
-        StructureManager.load()
+        load()
     }
 
     override fun onDisable() {
@@ -116,50 +113,9 @@ class Man10StructureApartment : JavaPlugin(),Listener {
                 StructureManager.jump(sender)
             }
 
-            "default" ->{
-                if (!sender.hasPermission(PERMISSION))return true
-                sender.persistentDataContainer.set(NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER,1)
-                sender.sendMessage("始点と終点を殴って範囲を指定する")
-            }
         }
 
         return true
-    }
-
-    @EventHandler
-    fun breakEvent(e:BlockBreakEvent){
-        val p = e.player
-        if (!p.hasPermission(PERMISSION))return
-
-        val mode = p.persistentDataContainer[NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER] ?: return
-
-        //POS1
-        if (mode == 1){
-
-            e.isCancelled = true
-
-            p.persistentDataContainer
-                .set(NamespacedKey(this,"Pos1"), PersistentDataType.STRING,locToStr(e.block.location))
-            p.persistentDataContainer.set(NamespacedKey(this,"SetDefault"), PersistentDataType.INTEGER,2)
-            p.sendMessage("始点を設定 終点を殴る")
-            return
-        }
-
-        //POS2
-        if (mode == 2){
-            e.isCancelled = true
-
-            val pos1Str = p.persistentDataContainer[NamespacedKey(this,"Pos1"), PersistentDataType.STRING]?:return
-            val pos1 = strToLoc(pos1Str)
-            val pos2 = e.block.location
-
-            p.persistentDataContainer.remove(NamespacedKey(this,"Pos1"))
-            p.persistentDataContainer.remove(NamespacedKey(this,"SetDefault"))
-
-
-            StructureManager.saveDefault(p,pos1, pos2)
-        }
-
     }
 
     @EventHandler

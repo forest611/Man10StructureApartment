@@ -65,22 +65,7 @@ object StructureManager {
         defaultBuilding = manager.loadStructure(default)
         Bukkit.getLogger().info("初期建築を読み込みました")
     }
-
-    fun saveDefault(p:Player, pos1:Location, pos2:Location){
-        val structure = manager.createStructure()
-        structure.fill(pos1,pos2,true)
-
-        val file = File("${instance.dataFolder.path}/Apart/Default")
-
-        try {
-            manager.saveStructure(file,structure)
-            defaultBuilding = structure
-            p.sendMessage("保存成功")
-        }catch (e:Exception){
-            p.sendMessage("初期建築の保存に失敗")
-        }
-    }
-
+    
     private fun loadAddress(){
 
         addressMap.clear()
