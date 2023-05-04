@@ -59,14 +59,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
         if (args.isNullOrEmpty()){
 
-            sender.sendMessage("""
-                /msa save...建築の保存
-                /msa place <日数>...建築の設置(指定日数アクセスできる)
-                /msa remove...建築の削除
-                /msa jump...建築にテレポート
-                /msa default...初期建築の設定
-            """.trimIndent())
-
+            MainMenu(sender).open()
             return true
         }
 
@@ -78,15 +71,20 @@ class Man10StructureApartment : JavaPlugin(),Listener {
                 threadPool.execute {
                     load()
                 }
-
             }
 
-            "menu"->{
-                MainMenu(sender).open()
+            "help"->{
+                if (!sender.hasPermission(PERMISSION))return true
+                sender.sendMessage("""
+                /msa save...建築の保存
+                /msa place <日数>...建築の設置(指定日数アクセスできる)
+                /msa remove...建築の削除
+                /msa jump...建築にテレポート
+                /msa default...初期建築の設定
+                """.trimIndent())
             }
 
             "save"->{
-
                 if (!sender.hasPermission(PERMISSION))return true
                 threadPool.execute {
                     saveStructure(sender)
@@ -94,7 +92,6 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             }
 
             "place"->{
-
                 if (!sender.hasPermission(PERMISSION))return true
                 threadPool.execute {
                     StructureManager.placeStructure(sender)
@@ -168,7 +165,6 @@ class Man10StructureApartment : JavaPlugin(),Listener {
     @EventHandler
     fun logout(e:PlayerQuitEvent){
 
-        //ログアウト時にアパート情報の保存をする
         threadPool.execute {
             saveStructure(e.player)
         }

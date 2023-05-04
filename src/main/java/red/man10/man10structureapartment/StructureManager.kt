@@ -63,7 +63,7 @@ object StructureManager {
             return
         }
         defaultBuilding = manager.loadStructure(default)
-
+        Bukkit.getLogger().info("初期建築を読み込みました")
     }
 
     fun saveDefault(p:Player, pos1:Location, pos2:Location){
@@ -77,7 +77,7 @@ object StructureManager {
             defaultBuilding = structure
             p.sendMessage("保存成功")
         }catch (e:Exception){
-            p.sendMessage("§c初期建築の保存に失敗")
+            p.sendMessage("初期建築の保存に失敗")
         }
     }
 
@@ -96,11 +96,11 @@ object StructureManager {
 
         val array = Gson().fromJson(reader.readText(),Array<ApartData>::class.java)
 
-        array.forEach {
-            addressMap[it.owner] = it
-        }
+        array.forEach { addressMap[it.owner] = it }
 
         reader.close()
+
+        Bukkit.getLogger().info("住所情報を読み込みました")
     }
 
     private fun saveAddress(){
@@ -140,12 +140,12 @@ object StructureManager {
             if (!file.exists()){
                 manager.saveStructure(file,structure)
             }else{
-                Bukkit.getLogger().info("上書きします")
+//                Bukkit.getLogger().info("上書きします")
                 manager.saveStructure(file,structure)
             }
-            p.sendMessage("保存完了")
+//            p.sendMessage("保存完了")
         }catch (e:Exception){
-            p.sendMessage("§cアパートの保存に失敗しました。レポートしてください")
+//            p.sendMessage("§cアパートの保存に失敗しました。レポートしてください")
         }
 
     }
@@ -154,7 +154,7 @@ object StructureManager {
     fun placeStructure(p:Player){
 
         if (addressMap[p.uniqueId]!=null){
-            p.sendMessage("すでに建物があります")
+//            p.sendMessage("すでに建物があります")
             return
         }
 
@@ -166,7 +166,7 @@ object StructureManager {
             val oldestData = addressMap.values.filter { Bukkit.getPlayer(it.owner)?.isOnline == false }.minByOrNull { it.lastAccess }
 
             if (oldestData == null){
-                p.sendMessage("現在マンションは定員オーバーです")
+                p.sendMessage("§c現在マンションは定員オーバーです")
                 return
             }
 
@@ -187,6 +187,7 @@ object StructureManager {
             manager.loadStructure(default)
         }
 
+        //建物を設置
         Bukkit.getScheduler().runTask(instance, Runnable {
             structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,-1,1F, Random())
         })
@@ -204,7 +205,7 @@ object StructureManager {
         //住所情報をJsonファイルに登録
         update(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),date))
 
-        p.sendMessage("設置完了")
+//        p.sendMessage("設置完了")
     }
 
     //土地を削除する
@@ -259,7 +260,7 @@ object StructureManager {
         }
 
         if (!vault.withdraw(p.uniqueId,day* dailyRent)){
-            p.sendMessage("電子マネーが足りません")
+            p.sendMessage("§c電子マネーが足りません")
             return
         }
 
@@ -271,7 +272,7 @@ object StructureManager {
         addressMap[p.uniqueId] = data
         saveStructure(p)
 
-        p.sendMessage("利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("yyyy-MM-dd").format(data.rentDue)}まで)")
+        p.sendMessage("§e利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("MM月dd日").format(data.rentDue)}まで)")
     }
 
     fun jump(p:Player){
@@ -286,17 +287,12 @@ object StructureManager {
         }
 
         if (Date().after(data.rentDue)){
-            p.sendMessage("利用料の支払いがされていません！")
+            p.sendMessage("§c利用料の支払いがされていません！")
             return
         }
 
         val pos1 = strToLoc(data.pos1)
-        val pos2 = strToLoc(data.pos2)
 
-//        val spawnX = (pos1.x + pos2.x)/2.0
-//        val spawnY = (pos1.y + pos2.y)/2.0
-//        val spawnZ = (pos1.z + pos2.z)/2.0
-//
         val spawnX = pos1.x+ jump.first
         val spawnY = pos1.y+ jump.second
         val spawnZ = pos1.z+ jump.third
