@@ -70,38 +70,6 @@ class Man10StructureApartment : JavaPlugin(),Listener {
                 }
             }
 
-            "help"->{
-                if (!sender.hasPermission(PERMISSION))return true
-                sender.sendMessage("""
-                /msa save...建築の保存
-                /msa place <日数>...建築の設置(指定日数アクセスできる)
-                /msa remove...建築の削除
-                /msa jump...建築にテレポート
-                /msa default...初期建築の設定
-                """.trimIndent())
-            }
-
-            "save"->{
-                if (!sender.hasPermission(PERMISSION))return true
-                threadPool.execute {
-                    saveStructure(sender)
-                }
-            }
-
-            "place"->{
-                if (!sender.hasPermission(PERMISSION))return true
-                threadPool.execute {
-                    StructureManager.placeStructure(sender)
-                }
-            }
-
-            "remove" ->{
-                if (!sender.hasPermission(PERMISSION))return true
-                threadPool.execute {
-                    StructureManager.removeStructure(sender.uniqueId)
-                }
-            }
-
             "pay" ->{
                 val day = args[1].toInt()
                 threadPool.execute{
