@@ -17,6 +17,7 @@ import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.HashMap
 import kotlin.math.max
 import kotlin.math.min
 
@@ -27,8 +28,10 @@ object StructureManager {
     private var maxApartCount = 128
     var dailyRent = 1000.0
     private lateinit var world: World
+    private var backCommand = ""
 
     private var addressMap = ConcurrentHashMap<UUID,ApartData>()
+    private val livingList = mutableListOf<UUID>()
     private lateinit var manager : StructureManager
     private lateinit var defaultBuilding : Structure
     private lateinit var vault : VaultManager
@@ -44,6 +47,7 @@ object StructureManager {
         maxApartCount = instance.config.getInt("MaxApartCount")
         dailyRent = instance.config.getDouble("DailyRent")
         world = instance.server.getWorld(instance.config.getString("BuilderWorld")?:"world")!!
+        backCommand = instance.config.getString("BackCommand")?:""
 
         val relativeX = instance.config.getDouble("RelativeX")
         val relativeY = instance.config.getDouble("RelativeY")
@@ -262,6 +266,12 @@ object StructureManager {
 
     fun jump(p:Player){
 
+        if (livingList.contains(p.uniqueId)){
+            livingList.remove(p.uniqueId)
+            p.performCommand(backCommand)
+            return
+        }
+
         val data = addressMap[p.uniqueId]
 
         if (data == null){
@@ -285,6 +295,10 @@ object StructureManager {
         val loc = Location(pos1.world,spawnX,spawnY,spawnZ)
 
         p.teleport(loc)
+
+        livingList.add(p.uniqueId)
+        p.sendMessage("§aマンションにジャンプしました")
+        p.sendMessage("§a戻る時は§nドアを右クリック§aしてください")
     }
 }
 
