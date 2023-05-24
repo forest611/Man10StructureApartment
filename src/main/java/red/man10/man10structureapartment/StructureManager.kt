@@ -17,7 +17,6 @@ import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.HashMap
 import kotlin.math.max
 import kotlin.math.min
 
@@ -41,6 +40,7 @@ object StructureManager {
         manager = instance.server.structureManager
         vault = VaultManager(instance)
 
+        instance.saveDefaultConfig()
         instance.reloadConfig()
 
         distance = instance.config.getInt("Distance")
@@ -266,8 +266,9 @@ object StructureManager {
 
     fun jump(p:Player){
 
+        //マンションにいたら戻る
         if (livingList.contains(p.uniqueId)){
-            livingList.remove(p.uniqueId)
+            exit(p)
             p.performCommand(backCommand)
             return
         }
@@ -275,9 +276,8 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data == null){
-//            p.sendMessage("あなたはマンションを借りていません")
             placeStructure(p)
-            jump(p)
+//            jump(p)
             return
         }
 
@@ -295,10 +295,17 @@ object StructureManager {
         val loc = Location(pos1.world,spawnX,spawnY,spawnZ)
 
         p.teleport(loc)
-
-        livingList.add(p.uniqueId)
+        enter(p)
         p.sendMessage("§aマンションにジャンプしました")
         p.sendMessage("§a戻る時は§nドアを右クリック§aしてください")
+    }
+
+    fun enter(p:Player){
+        livingList.add(p.uniqueId)
+    }
+
+    fun exit(p:Player){
+        livingList.remove(p.uniqueId)
     }
 }
 
