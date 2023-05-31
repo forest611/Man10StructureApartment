@@ -37,7 +37,6 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
     override fun onEnable() {
         // Plugin startup logic
-        saveDefaultConfig()
         instance = this
 
 
@@ -83,7 +82,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             }
 
             "jump" ->{
-                StructureManager.jump(sender)
+                jump(sender)
             }
 
         }
@@ -94,11 +93,14 @@ class Man10StructureApartment : JavaPlugin(),Listener {
     @EventHandler
     fun logout(e:PlayerQuitEvent){
 
+        StructureManager.exit(e.player)
+
         threadPool.execute {
             saveStructure(e.player)
         }
     }
 
+    //ドアクリックで飛ぶ
     @EventHandler
     fun clickEvent(e:PlayerInteractEvent){
 
