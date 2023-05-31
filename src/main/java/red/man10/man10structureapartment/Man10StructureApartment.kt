@@ -2,6 +2,7 @@ package red.man10.man10structureapartment
 
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.block.data.type.Door
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
@@ -103,7 +104,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
         if (e.action != Action.RIGHT_CLICK_BLOCK)return
 
-        if (e.clickedBlock?.state !is Door)return
+        if (e.clickedBlock?.type != Material.IRON_DOOR)return
 
         jump(e.player)
     }
