@@ -259,6 +259,7 @@ object StructureManager {
         data.rentDue = cal.time
 
         addressMap[p.uniqueId] = data
+        saveAddress()
         saveStructure(p.uniqueId)
 
         msg(p,"§e§l利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("MM月dd日").format(data.rentDue)}まで)")
