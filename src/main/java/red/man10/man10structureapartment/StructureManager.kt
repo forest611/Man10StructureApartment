@@ -10,6 +10,7 @@ import org.bukkit.structure.Structure
 import org.bukkit.structure.StructureManager
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.instance
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.locToStr
+import red.man10.man10structureapartment.Man10StructureApartment.Companion.msg
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.strToLoc
 import java.io.File
 import java.io.FileReader
@@ -129,22 +130,20 @@ object StructureManager {
             if (!file.exists()){
                 manager.saveStructure(file,structure)
             }else{
-//                Bukkit.getLogger().info("上書きします")
                 manager.saveStructure(file,structure)
             }
-//            p.sendMessage("保存完了")
         }catch (e:Exception){
-//            p.sendMessage("§cアパートの保存に失敗しました。レポートしてください")
+//            msg(p,"§cアパートの保存に失敗しました。レポートしてください")
         }
-
     }
 
     //  ストラクチャーの呼び出し
-    fun placeStructure(p:Player){
+    //  ストラクチャーが生成できたらtrueを返す
+    fun placeStructure(p:Player):Boolean{
 
+        //アドレスがすでにある場合は建物があるとしてリターン
         if (addressMap[p.uniqueId]!=null){
-//            p.sendMessage("すでに建物があります")
-            return
+            return true
         }
 
         //座標を仮設定(現在あるアパートの数から指定する
@@ -155,8 +154,8 @@ object StructureManager {
             val oldestData = addressMap.values.filter { !Bukkit.getOfflinePlayer(it.owner).isOnline }.minByOrNull { it.lastAccess }
 
             if (oldestData == null){
-                p.sendMessage("§c現在マンションは定員オーバーです")
-                return
+                msg(p,"§c現在マンションは定員オーバーです")
+                return false
             }
 
             saveStructure(oldestData.owner)
@@ -171,8 +170,8 @@ object StructureManager {
         } else {
             val default = File("${instance.dataFolder.path}/Apart/Default")
             if (!default.exists()){
-                p.sendMessage("§cアパートの初期値がありません。レポートしてください")
-                return
+                msg(p,"§cアパートの初期値がありません。レポートしてください")
+                return false
             }
             manager.loadStructure(default)
         }
@@ -181,7 +180,6 @@ object StructureManager {
         Bukkit.getScheduler().runTask(instance, Runnable {
             structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,-1,1F, Random())
         })
-
 
         val pos2 = pos1.clone()
 
@@ -195,7 +193,8 @@ object StructureManager {
         //住所情報をJsonファイルに登録
         update(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),date))
 
-//        p.sendMessage("設置完了")
+//        msg(p,"設置完了")
+        return true
     }
 
     //土地を削除する
@@ -232,8 +231,6 @@ object StructureManager {
                     e.remove()
                 }
             }
-
-
         })
 
         addressMap.remove(owner)
@@ -245,13 +242,14 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data==null){
-            placeStructure(p)
-//            addPayment(p,day)
+            val ret = placeStructure(p)
+
+            if (ret){addPayment(p,day)}
             return
         }
 
         if (!vault.withdraw(p.uniqueId,day* dailyRent)){
-            p.sendMessage("§c電子マネーが足りません")
+            msg(p,"§c電子マネーが足りません")
             return
         }
 
@@ -263,7 +261,7 @@ object StructureManager {
         addressMap[p.uniqueId] = data
         saveStructure(p.uniqueId)
 
-        p.sendMessage("§e利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("MM月dd日").format(data.rentDue)}まで)")
+        msg(p,"§e§l利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("MM月dd日").format(data.rentDue)}まで)")
     }
 
     fun jump(p:Player){
@@ -278,14 +276,17 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data == null){
-            placeStructure(p)
-            p.sendMessage("§aもう一度ジャンプしてください")
-//            jump(p)
+            val ret = placeStructure(p)
+            if (ret){
+                jump(p)
+            }else{
+                msg(p,"§cマンションの呼び出しに失敗しました。レポートしてください")
+            }
             return
         }
 
         if (Date().after(data.rentDue)){
-            p.sendMessage("§c利用料の支払いがされていません！")
+            msg(p,"§c§l利用料の支払いがされていません！")
             return
         }
 
@@ -299,8 +300,8 @@ object StructureManager {
 
         p.teleport(loc)
         enter(p)
-        p.sendMessage("§aマンションにジャンプしました")
-        p.sendMessage("§a戻る時は§nドアを右クリック§aしてください")
+        msg(p,"§a§lマンションにジャンプしました")
+        msg(p,"§a§l戻る時は§n§lドアを右クリック§a§lしてください")
     }
 
     fun enter(p:Player){

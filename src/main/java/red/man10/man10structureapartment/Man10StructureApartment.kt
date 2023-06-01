@@ -33,6 +33,10 @@ class Man10StructureApartment : JavaPlugin(),Listener {
             val array = str.split(";")
             return Location(Bukkit.getWorld(array[0]),array[1].toDouble(),array[2].toDouble(),array[3].toDouble())
         }
+
+        fun msg(sender:Player,str: String){
+            sender.sendMessage("§f§l[Cloud§7§lApartment]§f§l${str}")
+        }
     }
 
     override fun onEnable() {
