@@ -111,9 +111,9 @@ object StructureManager {
     }
 
     //  ストラクチャーの保存
-    fun saveStructure(p:Player){
+    fun saveStructure(uuid:UUID){
 
-        val data = addressMap[p.uniqueId]?:return
+        val data = addressMap[uuid]?:return
 
         val structure = manager.createStructure()
 
@@ -123,7 +123,7 @@ object StructureManager {
         structure.fill(pos1,pos2,true)
         structure.persistentDataContainer.set(NamespacedKey(instance,"RentDue"), PersistentDataType.LONG,data.rentDue.time)
 
-        val file = File("${instance.dataFolder.path}/Apart/${p.uniqueId}")
+        val file = File("${instance.dataFolder.path}/Apart/${uuid}")
 
         try {
             if (!file.exists()){
@@ -152,13 +152,14 @@ object StructureManager {
 
         //最大数に達していたら、一番古いアパートと置き換える(そこの住人がオンラインだった場合は諦める)
         if (addressMap.size >= maxApartCount){
-            val oldestData = addressMap.values.filter { Bukkit.getPlayer(it.owner)?.isOnline == false }.minByOrNull { it.lastAccess }
+            val oldestData = addressMap.values.filter { !Bukkit.getOfflinePlayer(it.owner).isOnline }.minByOrNull { it.lastAccess }
 
             if (oldestData == null){
                 p.sendMessage("§c現在マンションは定員オーバーです")
                 return
             }
 
+            saveStructure(oldestData.owner)
             removeStructure(oldestData.owner)
             pos1 = strToLoc(oldestData.pos1)
         }
@@ -215,14 +216,6 @@ object StructureManager {
         val maxZ = max(pos1.blockZ,pos2.blockZ)
 
         Bukkit.getScheduler().runTask(instance, Runnable {
-            //エンティティを削除
-            for (e in world.entities){
-                val loc = e.location
-                if (loc.blockX in minX..maxX && loc.blockY in minY..maxY && loc.blockZ in minZ .. maxZ){
-                    e.remove()
-                }
-            }
-
             //ブロックを削除
             for (x in minX..maxX) {
                 for (y in minY..maxY) {
@@ -231,6 +224,15 @@ object StructureManager {
                     }
                 }
             }
+
+            //エンティティを削除
+            for (e in world.entities){
+                val loc = e.location
+                if (loc.blockX in minX..maxX && loc.blockY in minY..maxY && loc.blockZ in minZ .. maxZ){
+                    e.remove()
+                }
+            }
+
 
         })
 
@@ -244,7 +246,7 @@ object StructureManager {
 
         if (data==null){
             placeStructure(p)
-            addPayment(p,day)
+//            addPayment(p,day)
             return
         }
 
@@ -259,7 +261,7 @@ object StructureManager {
         data.rentDue = cal.time
 
         addressMap[p.uniqueId] = data
-        saveStructure(p)
+        saveStructure(p.uniqueId)
 
         p.sendMessage("§e利用料の支払いを行いました(利用可能期間:${SimpleDateFormat("MM月dd日").format(data.rentDue)}まで)")
     }
@@ -277,6 +279,7 @@ object StructureManager {
 
         if (data == null){
             placeStructure(p)
+            p.sendMessage("§aもう一度ジャンプしてください")
 //            jump(p)
             return
         }

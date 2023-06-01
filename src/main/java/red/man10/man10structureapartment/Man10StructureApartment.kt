@@ -96,7 +96,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
         StructureManager.exit(e.player)
 
         threadPool.execute {
-            saveStructure(e.player)
+            saveStructure(e.player.uniqueId)
         }
     }
 
