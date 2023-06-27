@@ -132,13 +132,8 @@ object StructureManager {
             }else{
                 manager.saveStructure(file,structure)
             }
-            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("MM_dd_HH_mm_ss").format(
-                Date()
-            )}"))
         }catch (e:Exception){
-            e.printStackTrace()
-            val p = Bukkit.getPlayer(uuid)?:return
-            msg(p,"§cアパートの保存に失敗しました。レポートしてください")
+//            msg(p,"§cアパートの保存に失敗しました。レポートしてください")
         }
     }
 
@@ -180,8 +175,6 @@ object StructureManager {
             }
             manager.loadStructure(default)
         }
-
-        file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${p.uniqueId}/${SimpleDateFormat("MM_dd_HH_mm_ss").format(Date())}"))
 
         //建物を設置
         Bukkit.getScheduler().runTask(instance, Runnable {
