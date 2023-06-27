@@ -112,7 +112,7 @@ object StructureManager {
     }
 
     //  ストラクチャーの保存
-    fun saveStructure(uuid:UUID){
+    fun saveStructure(uuid:UUID,retry:Boolean = true){
 
         val data = addressMap[uuid]?:return
 
@@ -133,7 +133,14 @@ object StructureManager {
                 manager.saveStructure(file,structure)
             }
         }catch (e:Exception){
-//            msg(p,"§cアパートの保存に失敗しました。レポートしてください")
+            val p = Bukkit.getOfflinePlayer(uuid).name
+            Bukkit.getLogger().warning("アパートの保存に失敗！(持ち主:$p)")
+            Bukkit.getLogger().warning(e.message)
+            if (retry){
+                Bukkit.getLogger().info("保存のやり直しを試みます")
+                saveStructure(uuid,false)
+                return
+            }
         }
     }
 
@@ -237,14 +244,14 @@ object StructureManager {
         saveAddress()
     }
 
-    fun addPayment(p:Player,day:Int){
+    fun addPayment(p:Player,day:Int,retry: Boolean = true){
 
         val data = addressMap[p.uniqueId]
 
         if (data==null){
             val ret = placeStructure(p)
 
-            if (ret){addPayment(p,day)}
+            if (ret && retry){addPayment(p,day,false)}
             return
         }
 
