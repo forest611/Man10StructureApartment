@@ -11,6 +11,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.jump
 import red.man10.man10structureapartment.StructureManager.pluginLoad
@@ -102,6 +103,9 @@ class Man10StructureApartment : JavaPlugin(),Listener {
     //ドアクリックで飛ぶ
     @EventHandler
     fun clickEvent(e:PlayerInteractEvent){
+
+        //オフハンドのクリックに反応しないように
+        if (e.hand != EquipmentSlot.HAND)return
 
         if (e.action != Action.RIGHT_CLICK_BLOCK)return
 
