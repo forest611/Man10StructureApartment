@@ -139,8 +139,10 @@ object StructureManager {
                 Bukkit.getLogger().warning("アパートの保存に失敗！(持ち主:$p)")
                 Bukkit.getLogger().warning(e.message)
                 if (retry){
-                    Bukkit.getLogger().info("保存のやり直しを試みます")
-                    saveStructure(uuid,false)
+                    Bukkit.getScheduler().runTask(instance, Runnable {
+                        Bukkit.getLogger().info("保存のやり直しを試みます")
+                        saveStructure(uuid,false)
+                    })
                     return@Thread
                 }
             }
