@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import org.bukkit.*
 import org.bukkit.block.structure.Mirror
 import org.bukkit.block.structure.StructureRotation
+import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.structure.Structure
@@ -37,7 +38,7 @@ object StructureManager {
     private lateinit var vault : VaultManager
     private lateinit var jump : Triple<Double,Double,Double>
 
-    fun load(){
+    fun pluginLoad(){
         manager = instance.server.structureManager
         vault = VaultManager(instance)
 
@@ -106,12 +107,12 @@ object StructureManager {
         writer.close()
     }
 
-    private fun update(data: ApartData){
+    private fun updateAddress(data: ApartData){
         addressMap[data.owner] = data
         saveAddress()
     }
 
-    //  ストラクチャーの保存
+    //  ストラクチャーの保存(必ずメインスレッドで呼び出す)
     fun saveStructure(uuid:UUID,retry:Boolean = true){
 
         val data = addressMap[uuid]?:return
@@ -124,33 +125,35 @@ object StructureManager {
         structure.fill(pos1,pos2,true)
         structure.persistentDataContainer.set(NamespacedKey(instance,"RentDue"), PersistentDataType.LONG,data.rentDue.time)
 
-        val file = File("${instance.dataFolder.path}/Apart/${uuid}")
+        Thread{
+            val file = File("${instance.dataFolder.path}/Apart/${uuid}")
 
-        try {
-            if (!file.exists()){
-                manager.saveStructure(file,structure)
-            }else{
-                manager.saveStructure(file,structure)
+            try {
+                if (!file.exists()){
+                    manager.saveStructure(file,structure)
+                }else{
+                    manager.saveStructure(file,structure)
+                }
+            }catch (e:Exception){
+                val p = Bukkit.getOfflinePlayer(uuid).name
+                Bukkit.getLogger().warning("アパートの保存に失敗！(持ち主:$p)")
+                Bukkit.getLogger().warning(e.message)
+                if (retry){
+                    Bukkit.getLogger().info("保存のやり直しを試みます")
+                    saveStructure(uuid,false)
+                    return@Thread
+                }
             }
-        }catch (e:Exception){
-            val p = Bukkit.getOfflinePlayer(uuid).name
-            Bukkit.getLogger().warning("アパートの保存に失敗！(持ち主:$p)")
-            Bukkit.getLogger().warning(e.message)
-            if (retry){
-                Bukkit.getLogger().info("保存のやり直しを試みます")
-                saveStructure(uuid,false)
-                return
-            }
-        }
+        }.start()
     }
 
     //  ストラクチャーの呼び出し
     //  ストラクチャーが生成できたらtrueを返す
-    fun placeStructure(p:Player):Boolean{
+    private fun placeStructure(p:Player){
 
         //アドレスがすでにある場合は建物があるとしてリターン
         if (addressMap[p.uniqueId]!=null){
-            return true
+            return
         }
 
         //座標を仮設定(現在あるアパートの数から指定する
@@ -162,7 +165,7 @@ object StructureManager {
 
             if (oldestData == null){
                 msg(p,"§c現在マンションは定員オーバーです")
-                return false
+                return
             }
 
             saveStructure(oldestData.owner)
@@ -170,42 +173,42 @@ object StructureManager {
             pos1 = strToLoc(oldestData.pos1)
         }
 
-        val file = File("${instance.dataFolder.path}/Apart/${p.uniqueId}")
+        Thread{
+            val file = File("${instance.dataFolder.path}/Apart/${p.uniqueId}")
 
-        val structure = if (file.exists()){
-            manager.loadStructure(file)
-        } else {
-            val default = File("${instance.dataFolder.path}/Apart/Default")
-            if (!default.exists()){
-                msg(p,"§cアパートの初期値がありません。レポートしてください")
-                return false
+            val structure = if (file.exists()){
+                manager.loadStructure(file)
+            } else {
+                val default = File("${instance.dataFolder.path}/Apart/Default")
+                if (!default.exists()){
+                    msg(p,"§cアパートの初期値がありません。レポートしてください")
+                    return@Thread
+                }
+                manager.loadStructure(default)
             }
-            manager.loadStructure(default)
-        }
 
-        //建物を設置
-        Bukkit.getScheduler().runTask(instance, Runnable {
-            structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,-1,1F, Random())
-        })
+            Bukkit.getScheduler().runTask(instance, Runnable {
+                structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,-1,1F, Random())
+            })
 
-        val pos2 = pos1.clone()
+            val pos2 = pos1.clone()
 
-        pos2.x+=structure.size.x
-        pos2.y+=structure.size.y
-        pos2.z+=structure.size.z
+            pos2.x+=structure.size.x
+            pos2.y+=structure.size.y
+            pos2.z+=structure.size.z
 
-        val date = Date()
-        date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
+            val date = Date()
+            date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
 
-        //住所情報をJsonファイルに登録
-        update(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),date))
+            //住所情報をJsonファイルに登録
+            updateAddress(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),date))
 
-//        msg(p,"設置完了")
-        return true
+        }.start()
+
     }
 
-    //土地を削除する
-    fun removeStructure(owner: UUID){
+    //土地を削除する(メインスレッドで)
+    private fun removeStructure(owner: UUID){
 
         val data = addressMap[owner]?:return
 
@@ -221,37 +224,33 @@ object StructureManager {
         val maxY = max(pos1.blockY,pos2.blockY)
         val maxZ = max(pos1.blockZ,pos2.blockZ)
 
-        Bukkit.getScheduler().runTask(instance, Runnable {
-            //ブロックを削除
-            for (x in minX..maxX) {
-                for (y in minY..maxY) {
-                    for (z in minZ..maxZ) {
-                        world.getBlockAt(x, y, z).type = Material.AIR
-                    }
+        for (x in minX..maxX) {
+            for (y in minY..maxY) {
+                for (z in minZ..maxZ) {
+                    world.getBlockAt(x, y, z).type = Material.AIR
                 }
             }
+        }
 
-            //エンティティを削除
-            for (e in world.entities){
-                val loc = e.location
-                if (loc.blockX in minX..maxX && loc.blockY in minY..maxY && loc.blockZ in minZ .. maxZ){
-                    e.remove()
-                }
+        //エンティティを削除
+        for (e in world.entities){
+            if (e.type == EntityType.PLAYER)continue
+            val loc = e.location
+            if (loc.blockX in minX..maxX && loc.blockY in minY..maxY && loc.blockZ in minZ .. maxZ){
+                e.remove()
             }
-        })
+        }
 
         addressMap.remove(owner)
         saveAddress()
     }
 
-    fun addPayment(p:Player,day:Int,retry: Boolean = true){
+    fun addPayment(p:Player,day:Int){
 
         val data = addressMap[p.uniqueId]
 
         if (data==null){
-            val ret = placeStructure(p)
-
-            if (ret && retry){addPayment(p,day,false)}
+            placeStructure(p)
             return
         }
 
@@ -284,12 +283,7 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data == null){
-            val ret = placeStructure(p)
-            if (ret){
-                jump(p)
-            }else{
-                msg(p,"§cマンションの呼び出しに失敗しました。レポートしてください")
-            }
+            placeStructure(p)
             return
         }
 

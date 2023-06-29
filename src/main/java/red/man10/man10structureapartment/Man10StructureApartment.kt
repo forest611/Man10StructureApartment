@@ -3,7 +3,6 @@ package red.man10.man10structureapartment
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.block.data.type.Door
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -14,7 +13,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.jump
-import red.man10.man10structureapartment.StructureManager.load
+import red.man10.man10structureapartment.StructureManager.pluginLoad
 import red.man10.man10structureapartment.StructureManager.saveStructure
 import java.util.concurrent.Executors
 
@@ -22,7 +21,6 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
     companion object{
         lateinit var instance : Man10StructureApartment
-        private val threadPool = Executors.newSingleThreadExecutor()
 
         private const val PERMISSION = "man10apart.op"
 
@@ -49,12 +47,11 @@ class Man10StructureApartment : JavaPlugin(),Listener {
         server.pluginManager.registerEvents(this,this)
         server.pluginManager.registerEvents(MenuFramework.MenuListener,this)
 
-        load()
+        pluginLoad()
     }
 
     override fun onDisable() {
         // Plugin shutdown logic
-        threadPool.shutdown()
         //鯖に人が残っていた場合の処理
         Bukkit.getOnlinePlayers().forEach {
             saveStructure(it.uniqueId)
@@ -76,16 +73,14 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
             "reload" ->{
                 if (!sender.hasPermission(PERMISSION))return true
-                threadPool.execute {
-                    load()
-                }
+                Thread{
+                    pluginLoad()
+                }.start()
             }
 
             "pay" ->{
                 val day = args[1].toInt()
-                threadPool.execute{
-                    StructureManager.addPayment(sender,day)
-                }
+                StructureManager.addPayment(sender,day)
             }
 
             "jump" ->{
@@ -101,10 +96,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
     fun logout(e:PlayerQuitEvent){
 
         StructureManager.exit(e.player)
-
-        threadPool.execute {
-            saveStructure(e.player.uniqueId)
-        }
+        saveStructure(e.player.uniqueId)
     }
 
     //ドアクリックで飛ぶ
