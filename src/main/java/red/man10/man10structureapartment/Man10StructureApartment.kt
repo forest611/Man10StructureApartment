@@ -25,14 +25,6 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
         private const val PERMISSION = "man10apart.op"
 
-        fun locToStr(loc:Location):String{
-            return "${loc.world.name};${loc.x};${loc.y};${loc.z}"
-        }
-        fun strToLoc(str:String):Location{
-            val array = str.split(";")
-            return Location(Bukkit.getWorld(array[0]),array[1].toDouble(),array[2].toDouble(),array[3].toDouble())
-        }
-
         fun msg(sender:Player,str: String){
             sender.sendMessage("§f§l[Cloud§7§lApartment]§f§l${str}")
         }

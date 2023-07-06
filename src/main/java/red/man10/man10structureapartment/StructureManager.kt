@@ -7,18 +7,18 @@ import org.bukkit.block.structure.StructureRotation
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.structure.Palette
 import org.bukkit.structure.Structure
 import org.bukkit.structure.StructureManager
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.instance
-import red.man10.man10structureapartment.Man10StructureApartment.Companion.locToStr
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.msg
-import red.man10.man10structureapartment.Man10StructureApartment.Companion.strToLoc
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.min
 
@@ -37,6 +37,8 @@ object StructureManager {
     private lateinit var defaultBuilding : Structure
     private lateinit var vault : VaultManager
     private lateinit var jump : Triple<Double,Double,Double>
+
+    private val thread = Executors.newSingleThreadExecutor()
 
     fun pluginLoad(){
         manager = instance.server.structureManager
@@ -90,8 +92,6 @@ object StructureManager {
         array.forEach { addressMap[it.owner] = it }
 
         reader.close()
-
-        Bukkit.getLogger().info("住所情報を読み込みました")
     }
 
     private fun saveAddress(){
@@ -108,6 +108,11 @@ object StructureManager {
     }
 
     private fun updateAddress(data: ApartData){
+
+        //住所が重複している部分を削除
+        val old = addressMap.filterValues { it.sx == data.sx && it.sy == data.sy && it.sz == data.sz }
+        old.forEach { addressMap.remove(it.key) }
+        //保存
         addressMap[data.owner] = data
         saveAddress()
     }
@@ -119,13 +124,13 @@ object StructureManager {
 
         val structure = manager.createStructure()
 
-        val pos1 = strToLoc(data.pos1)
-        val pos2 = strToLoc(data.pos2)
+        val pos1 = Location(world,data.sx,data.sy,data.sz)
+        val pos2 = Location(world,data.ex,data.ey,data.ez)
 
         structure.fill(pos1,pos2,true)
         structure.persistentDataContainer.set(NamespacedKey(instance,"RentDue"), PersistentDataType.LONG,data.rentDue.time)
 
-        Thread{
+        thread.execute {
             val file = File("${instance.dataFolder.path}/Apart/${uuid}")
 
             try {
@@ -143,10 +148,12 @@ object StructureManager {
                         Bukkit.getLogger().info("保存のやり直しを試みます")
                         saveStructure(uuid,false)
                     })
-                    return@Thread
+                    return@execute
                 }
             }
-        }.start()
+
+            Bukkit.getLogger().info("保存完了")
+        }
     }
 
     //  ストラクチャーの呼び出し
@@ -171,11 +178,12 @@ object StructureManager {
             }
 
             saveStructure(oldestData.owner)
-            removeStructure(oldestData.owner)
-            pos1 = strToLoc(oldestData.pos1)
+            pos1 = Location(world,oldestData.sx,oldestData.sy,oldestData.sz)
         }
 
-        Thread{
+        val pos2 = pos1.clone()
+
+        thread.execute {
             val file = File("${instance.dataFolder.path}/Apart/${p.uniqueId}")
 
             val structure = if (file.exists()){
@@ -184,38 +192,32 @@ object StructureManager {
                 val default = File("${instance.dataFolder.path}/Apart/Default")
                 if (!default.exists()){
                     msg(p,"§cアパートの初期値がありません。レポートしてください")
-                    return@Thread
+                    return@execute
                 }
                 manager.loadStructure(default)
             }
-
-            Bukkit.getScheduler().runTask(instance, Runnable {
-                structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,-1,1F, Random())
-            })
-
-            val pos2 = pos1.clone()
 
             pos2.x+=structure.size.x
             pos2.y+=structure.size.y
             pos2.z+=structure.size.z
 
+            Bukkit.getScheduler().runTask(instance, Runnable {
+                structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,0,1F, Random())
+                remove(pos1,pos2)
+            })
+
             val date = Date()
             date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
 
             //住所情報をJsonファイルに登録
-            updateAddress(ApartData(p.uniqueId, locToStr(pos1), locToStr(pos2), Date(),date))
+            updateAddress(ApartData(p.uniqueId, pos1.x,pos1.y,pos1.z, pos2.x,pos2.y,pos2.z, Date(),date))
 
-        }.start()
+        }
 
     }
 
     //土地を削除する(メインスレッドで)
-    private fun removeStructure(owner: UUID){
-
-        val data = addressMap[owner]?:return
-
-        val pos1 = strToLoc(data.pos1)
-        val pos2 = strToLoc(data.pos2)
+    private fun remove(pos1:Location, pos2:Location){
 
         val world = pos1.world
 
@@ -226,14 +228,6 @@ object StructureManager {
         val maxY = max(pos1.blockY,pos2.blockY)
         val maxZ = max(pos1.blockZ,pos2.blockZ)
 
-        for (x in minX..maxX) {
-            for (y in minY..maxY) {
-                for (z in minZ..maxZ) {
-                    world.getBlockAt(x, y, z).type = Material.AIR
-                }
-            }
-        }
-
         //エンティティを削除
         for (e in world.entities){
             if (e.type == EntityType.PLAYER)continue
@@ -242,9 +236,6 @@ object StructureManager {
                 e.remove()
             }
         }
-
-        addressMap.remove(owner)
-        saveAddress()
     }
 
     fun addPayment(p:Player,day:Int){
@@ -286,6 +277,7 @@ object StructureManager {
 
         if (data == null){
             placeStructure(p)
+            msg(p,"§c§lもう一度クリックしてください")
             return
         }
 
@@ -294,7 +286,7 @@ object StructureManager {
             return
         }
 
-        val pos1 = strToLoc(data.pos1)
+        val pos1 = Location(world,data.sx,data.sy,data.sz)
 
         val spawnX = pos1.x+ jump.first
         val spawnY = pos1.y+ jump.second
@@ -319,8 +311,12 @@ object StructureManager {
 
 data class ApartData(
     val owner : UUID,
-    val pos1 : String,
-    val pos2 : String,
+    val sx : Double,
+    val sy : Double,
+    val sz : Double,
+    val ex : Double,
+    val ey : Double,
+    val ez : Double,
     val lastAccess : Date,
     var rentDue : Date
 )
