@@ -63,6 +63,15 @@ object StructureManager {
         loadAddress()
     }
 
+    fun pluginClose(){
+
+        saveAddress()
+        addressMap.values.forEach {
+            saveStructure(it.owner)
+        }
+        thread.shutdownNow()
+    }
+
     //初期建築の読み込み
     private fun loadDefault(){
         val default = File("${instance.dataFolder.path}/Apart/Default")

@@ -45,10 +45,7 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
     override fun onDisable() {
         // Plugin shutdown logic
-        //鯖に人が残っていた場合の処理
-        Bukkit.getOnlinePlayers().forEach {
-            saveStructure(it.uniqueId)
-        }
+        StructureManager.pluginClose()
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>?): Boolean {
