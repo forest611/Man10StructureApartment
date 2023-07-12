@@ -117,7 +117,6 @@ object StructureManager {
     }
 
     private fun updateAddress(data: ApartData){
-
         //住所が重複している部分を削除
         val old = addressMap.filterValues { it.sx == data.sx && it.sy == data.sy && it.sz == data.sz }
         old.forEach { addressMap.remove(it.key) }
@@ -127,7 +126,7 @@ object StructureManager {
     }
 
     //  ストラクチャーの保存(必ずメインスレッドで呼び出す)
-    fun saveStructure(uuid:UUID,retry:Boolean = true){
+    fun saveStructure(uuid:UUID,retry:Boolean = true,op:Boolean = false){
 
         val data = addressMap[uuid]?:return
 
@@ -138,6 +137,11 @@ object StructureManager {
 
         structure.fill(pos1,pos2,true)
         structure.persistentDataContainer.set(NamespacedKey(instance,"RentDue"), PersistentDataType.LONG,data.rentDue.time)
+
+        if (op){
+            addressMap.remove(uuid)
+            saveAddress()
+        }
 
         thread.execute {
             val file = File("${instance.dataFolder.path}/Apart/${uuid}")
@@ -167,24 +171,20 @@ object StructureManager {
 
     //  ストラクチャーの呼び出し
     //  ストラクチャーが生成できたらtrueを返す
-    private fun placeStructure(p:Player){
+    fun placeStructure(uuid:UUID,location: Location? = null):Boolean{
 
         //アドレスがすでにある場合は建物があるとしてリターン
-        if (addressMap[p.uniqueId]!=null){
-            return
+        if (addressMap[uuid]!=null){
+            return true
         }
 
         //座標を仮設定(現在あるアパートの数から指定する
-        var pos1 = Location(world,(addressMap.size * distance).toDouble(),100.0,0.0)
+        var pos1 = location?:Location(world,(addressMap.size * distance).toDouble(),100.0,0.0)
 
         //最大数に達していたら、一番古いアパートと置き換える(そこの住人がオンラインだった場合は諦める)
         if (addressMap.size >= maxApartCount){
             val oldestData = addressMap.values.filter { !Bukkit.getOfflinePlayer(it.owner).isOnline }.minByOrNull { it.lastAccess }
-
-            if (oldestData == null){
-                msg(p,"§c現在マンションは定員オーバーです")
-                return
-            }
+                ?: return false
 
             saveStructure(oldestData.owner)
             pos1 = Location(world,oldestData.sx,oldestData.sy,oldestData.sz)
@@ -193,14 +193,14 @@ object StructureManager {
         val pos2 = pos1.clone()
 
         thread.execute {
-            val file = File("${instance.dataFolder.path}/Apart/${p.uniqueId}")
+            val file = File("${instance.dataFolder.path}/Apart/${uuid}")
 
             val structure = if (file.exists()){
                 manager.loadStructure(file)
             } else {
                 val default = File("${instance.dataFolder.path}/Apart/Default")
                 if (!default.exists()){
-                    msg(p,"§cアパートの初期値がありません。レポートしてください")
+//                    msg(p,"§cアパートの初期値がありません。レポートしてください")
                     return@execute
                 }
                 manager.loadStructure(default)
@@ -219,10 +219,10 @@ object StructureManager {
             date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
 
             //住所情報をJsonファイルに登録
-            updateAddress(ApartData(p.uniqueId, pos1.x,pos1.y,pos1.z, pos2.x,pos2.y,pos2.z, Date(),date))
-
+            updateAddress(ApartData(uuid, pos1.x,pos1.y,pos1.z, pos2.x,pos2.y,pos2.z, Date(),date))
         }
 
+        return true
     }
 
     //土地を削除する(メインスレッドで)
@@ -252,7 +252,9 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data==null){
-            placeStructure(p)
+            if (!placeStructure(p.uniqueId)){
+                p.sendMessage("§c現在アパートは満室です")
+            }
             return
         }
 
@@ -285,8 +287,11 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data == null){
-            placeStructure(p)
-            msg(p,"§c§lもう一度クリックしてください")
+            if (!placeStructure(p.uniqueId)){
+                msg(p,"§c現在アパートは満室です")
+            }else{
+                msg(p,"§c§lもう一度クリックしてください")
+            }
             return
         }
 

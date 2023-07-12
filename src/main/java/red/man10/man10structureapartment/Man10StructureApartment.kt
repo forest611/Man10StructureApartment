@@ -16,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.jump
 import red.man10.man10structureapartment.StructureManager.pluginLoad
 import red.man10.man10structureapartment.StructureManager.saveStructure
+import java.util.UUID
 import java.util.concurrent.Executors
 
 class Man10StructureApartment : JavaPlugin(),Listener {
@@ -25,8 +26,8 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
         private const val PERMISSION = "man10apart.op"
 
-        fun msg(sender:Player,str: String){
-            sender.sendMessage("§f§l[Cloud§7§lApartment]§f§l${str}")
+        fun msg(sender:Player?,str: String){
+            sender?.sendMessage("§f§l[Cloud§7§lApartment]§f§l${str}")
         }
     }
 
@@ -66,6 +67,28 @@ class Man10StructureApartment : JavaPlugin(),Listener {
                 Thread{
                     pluginLoad()
                 }.start()
+            }
+
+            "place" ->{
+                if (!sender.hasPermission(PERMISSION))return true
+
+                val uuid = UUID.fromString(args[1])
+
+                val ret = StructureManager.placeStructure(uuid,sender.location)
+
+                if (ret){
+                    msg(sender,"設置完了しました。内容変更があった場合は/msa save ${uuid}を打ってください")
+                }
+            }
+
+            "save" ->{
+                if (!sender.hasPermission(PERMISSION))return true
+
+                val uuid = UUID.fromString(args[1])
+
+                saveStructure(uuid,op = true)
+
+                msg(sender,"保存しました。建物は手動で削除してください。")
             }
 
             "pay" ->{
