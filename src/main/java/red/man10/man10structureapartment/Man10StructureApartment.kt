@@ -16,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.jump
 import red.man10.man10structureapartment.StructureManager.pluginLoad
 import red.man10.man10structureapartment.StructureManager.saveStructure
+import red.man10.man10structureapartment.StructureManager.thread
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -74,10 +75,11 @@ class Man10StructureApartment : JavaPlugin(),Listener {
 
                 val uuid = UUID.fromString(args[1])
 
-                val ret = StructureManager.placeStructure(uuid,sender.location)
-
-                if (ret){
-                    msg(sender,"設置完了しました。内容変更があった場合は/msa save ${uuid}を打ってください")
+                thread.execute {
+                    val ret = StructureManager.placeStructure(uuid,sender.location)
+                    if (ret){
+                        msg(sender,"設置完了しました。内容変更があった場合は/msa save ${uuid}を打ってください")
+                    }
                 }
             }
 

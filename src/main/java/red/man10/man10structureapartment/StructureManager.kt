@@ -38,7 +38,7 @@ object StructureManager {
     private lateinit var vault : VaultManager
     private lateinit var jump : Triple<Double,Double,Double>
 
-    private val thread = Executors.newSingleThreadExecutor()
+    val thread = Executors.newSingleThreadExecutor()
 
     fun pluginLoad(){
         manager = instance.server.structureManager
@@ -171,6 +171,7 @@ object StructureManager {
 
     //  ストラクチャーの呼び出し
     //  ストラクチャーが生成できたらtrueを返す
+    @Synchronized
     fun placeStructure(uuid:UUID,location: Location? = null):Boolean{
 
         //アドレスがすでにある場合は建物があるとしてリターン
@@ -192,35 +193,33 @@ object StructureManager {
 
         val pos2 = pos1.clone()
 
-        thread.execute {
-            val file = File("${instance.dataFolder.path}/Apart/${uuid}")
+        val file = File("${instance.dataFolder.path}/Apart/${uuid}")
 
-            val structure = if (file.exists()){
-                manager.loadStructure(file)
-            } else {
-                val default = File("${instance.dataFolder.path}/Apart/Default")
-                if (!default.exists()){
+        val structure = if (file.exists()){
+            manager.loadStructure(file)
+        } else {
+            val default = File("${instance.dataFolder.path}/Apart/Default")
+            if (!default.exists()){
 //                    msg(p,"§cアパートの初期値がありません。レポートしてください")
-                    return@execute
-                }
-                manager.loadStructure(default)
+                return false
             }
-
-            pos2.x+=structure.size.x
-            pos2.y+=structure.size.y
-            pos2.z+=structure.size.z
-
-            Bukkit.getScheduler().runTask(instance, Runnable {
-                structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,0,1F, Random())
-                remove(pos1,pos2)
-            })
-
-            val date = Date()
-            date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
-
-            //住所情報をJsonファイルに登録
-            updateAddress(ApartData(uuid, pos1.x,pos1.y,pos1.z, pos2.x,pos2.y,pos2.z, Date(),date))
+            manager.loadStructure(default)
         }
+
+        pos2.x+=structure.size.x
+        pos2.y+=structure.size.y
+        pos2.z+=structure.size.z
+
+        Bukkit.getScheduler().runTask(instance, Runnable {
+            structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,0,1F, Random())
+            remove(pos1,pos2)
+        })
+
+        val date = Date()
+        date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
+
+        //住所情報をJsonファイルに登録
+        updateAddress(ApartData(uuid, pos1.x,pos1.y,pos1.z, pos2.x,pos2.y,pos2.z, Date(),date))
 
         return true
     }
@@ -252,8 +251,10 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data==null){
-            if (!placeStructure(p.uniqueId)){
-                p.sendMessage("§c現在アパートは満室です")
+            thread.execute {
+                if (!placeStructure(p.uniqueId)){
+                    p.sendMessage("§c現在アパートは満室です")
+                }
             }
             return
         }
@@ -287,10 +288,12 @@ object StructureManager {
         val data = addressMap[p.uniqueId]
 
         if (data == null){
-            if (!placeStructure(p.uniqueId)){
-                msg(p,"§c現在アパートは満室です")
-            }else{
-                msg(p,"§c§lもう一度クリックしてください")
+            thread.execute {
+                if (!placeStructure(p.uniqueId)){
+                    msg(p,"§c現在アパートは満室です")
+                }else{
+                    msg(p,"§c§lもう一度クリックしてください")
+                }
             }
             return
         }
