@@ -25,6 +25,9 @@ import kotlin.math.min
 
 object StructureManager {
 
+    private const val POS_Y = 100.0
+    private const val POS_Z = 0.0
+
     private var distance = 64
     private var maxApartCount = 128
     var dailyRent = 1000.0
@@ -118,7 +121,7 @@ object StructureManager {
 
     private fun updateAddress(data: ApartData){
         //住所が重複している部分を削除
-        val old = addressMap.filterValues { it.sx == data.sx && it.sy == data.sy && it.sz == data.sz }
+        val old = addressMap.filterValues { it.sx == data.sx}
         old.forEach { addressMap.remove(it.key) }
         //保存
         addressMap[data.owner] = data
@@ -179,17 +182,36 @@ object StructureManager {
             return true
         }
 
-        //座標を仮設定(現在あるアパートの数から指定する
-        var pos1 = location?:Location(world,(addressMap.size * distance).toDouble(),100.0,0.0)
+        var posX = -1.0
+        //利用中の部屋のリスト
+        val filtered = addressMap.values.filter { Bukkit.getOfflinePlayer(it.owner).isOnline }
 
-        //最大数に達していたら、一番古いアパートと置き換える(そこの住人がオンラインだった場合は諦める)
-        if (addressMap.size >= maxApartCount){
-            val oldestData = addressMap.values.filter { !Bukkit.getOfflinePlayer(it.owner).isOnline }.minByOrNull { it.lastAccess }
-                ?: return false
+        Bukkit.getLogger().info("現在:${filtered.size}人が利用中")
 
-            saveStructure(oldestData.owner)
-            pos1 = Location(world,oldestData.sx,oldestData.sy,oldestData.sz)
+        for (i in 0 until maxApartCount){
+            if (filtered.any { it.sx == (i * distance).toDouble() })continue
+            posX = (i * distance).toDouble()
         }
+
+        if (posX == -1.0){
+            Bukkit.getLogger().info("アパートの確保に失敗")
+            return false
+        }
+
+        Bukkit.getLogger().info("アパートの確保に成功:sx=${posX}")
+
+        //座標を設定
+        val pos1 = location?:Location(world,posX, POS_Y, POS_Z)
+
+//        //最大数に達していたら、一番古いアパートと置き換える(そこの住人がオンラインだった場合は諦める)
+//        if (addressMap.size >= maxApartCount){
+//            val oldestData = addressMap.values.filter { !Bukkit.getOfflinePlayer(it.owner).isOnline }.minByOrNull { it.lastAccess }
+//                ?: return false
+//
+//            saveStructure(oldestData.owner)
+//            addressMap.remove(oldestData.owner)
+//            pos1 = Location(world,oldestData.sx, POS_Y, POS_Z)
+//        }
 
         val pos2 = pos1.clone()
 
@@ -200,7 +222,6 @@ object StructureManager {
         } else {
             val default = File("${instance.dataFolder.path}/Apart/Default")
             if (!default.exists()){
-//                    msg(p,"§cアパートの初期値がありません。レポートしてください")
                 return false
             }
             manager.loadStructure(default)
@@ -220,6 +241,8 @@ object StructureManager {
 
         //住所情報をJsonファイルに登録
         updateAddress(ApartData(uuid, pos1.x,pos1.y,pos1.z, pos2.x,pos2.y,pos2.z, Date(),date))
+
+        Bukkit.getLogger().info("アパートの設置完了(現在のアパート数:${addressMap.values}")
 
         return true
     }
