@@ -7,7 +7,6 @@ import org.bukkit.block.structure.StructureRotation
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
-import org.bukkit.structure.Palette
 import org.bukkit.structure.Structure
 import org.bukkit.structure.StructureManager
 import red.man10.man10structureapartment.Man10StructureApartment.Companion.instance
@@ -85,7 +84,8 @@ object StructureManager {
         defaultBuilding = manager.loadStructure(default)
         Bukkit.getLogger().info("初期建築を読み込みました")
     }
-    
+
+    //住所情報をロード
     private fun loadAddress(){
 
         addressMap.clear()
@@ -188,6 +188,12 @@ object StructureManager {
 
         Bukkit.getLogger().info("現在:${filtered.size}人が利用中")
 
+        if (filtered.size >= maxApartCount){
+            Bukkit.getLogger().info("定員オーバー")
+            return false
+        }
+
+        //順番に探っていって、空き部屋を決定
         for (i in 0 until maxApartCount){
             if (filtered.any { it.sx == (i * distance).toDouble() })continue
             posX = (i * distance).toDouble()
@@ -232,8 +238,9 @@ object StructureManager {
         pos2.z+=structure.size.z
 
         Bukkit.getScheduler().runTask(instance, Runnable {
+            removeBlocks(pos1,pos2)
             structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,0,1F, Random())
-            remove(pos1,pos2)
+            removeEntities(pos1,pos2)
         })
 
         val date = Date()
@@ -247,8 +254,30 @@ object StructureManager {
         return true
     }
 
+    private fun removeBlocks(pos1: Location,pos2: Location){
+
+        val world = pos1.world
+
+        val minX = min(pos1.blockX,pos2.blockX)
+        val minY = min(pos1.blockY,pos2.blockY)
+        val minZ = min(pos1.blockZ,pos2.blockZ)
+        val maxX = max(pos1.blockX,pos2.blockX)
+        val maxY = max(pos1.blockY,pos2.blockY)
+        val maxZ = max(pos1.blockZ,pos2.blockZ)
+
+        //Blockを削除
+        for (x in minX..maxX){
+            for (y in minY..maxY){
+                for (z in minZ..maxZ){
+                    world.getBlockAt(x,y,z).type = Material.AIR
+                }
+            }
+        }
+
+    }
+
     //土地を削除する(メインスレッドで)
-    private fun remove(pos1:Location, pos2:Location){
+    private fun removeEntities(pos1:Location, pos2:Location){
 
         val world = pos1.world
 
