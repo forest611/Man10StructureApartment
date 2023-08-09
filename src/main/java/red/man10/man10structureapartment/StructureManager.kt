@@ -15,6 +15,9 @@ import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -121,8 +124,7 @@ object StructureManager {
 
     private fun updateAddress(data: ApartData){
         //住所が重複している部分を削除
-        val old = addressMap.filterValues { it.sx == data.sx}
-        old.forEach { addressMap.remove(it.key) }
+        addressMap.filterValues { it.sx == data.sx}.forEach { addressMap.remove(it.key) }
         //保存
         addressMap[data.owner] = data
         saveAddress()
@@ -209,15 +211,6 @@ object StructureManager {
         //座標を設定
         val pos1 = location?:Location(world,posX, POS_Y, POS_Z)
 
-//        //最大数に達していたら、一番古いアパートと置き換える(そこの住人がオンラインだった場合は諦める)
-//        if (addressMap.size >= maxApartCount){
-//            val oldestData = addressMap.values.filter { !Bukkit.getOfflinePlayer(it.owner).isOnline }.minByOrNull { it.lastAccess }
-//                ?: return false
-//
-//            saveStructure(oldestData.owner)
-//            addressMap.remove(oldestData.owner)
-//            pos1 = Location(world,oldestData.sx, POS_Y, POS_Z)
-//        }
 
         val pos2 = pos1.clone()
 
@@ -237,11 +230,7 @@ object StructureManager {
         pos2.y+=structure.size.y
         pos2.z+=structure.size.z
 
-        Bukkit.getScheduler().runTask(instance, Runnable {
-            removeBlocks(pos1,pos2)
-            structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,0,1F, Random())
-            removeEntities(pos1,pos2)
-        })
+        Bukkit.getScheduler().runTask(instance, Runnable { place(pos1, pos2, structure) })
 
         val date = Date()
         date.time = structure.persistentDataContainer[NamespacedKey(instance,"RentDue"), PersistentDataType.LONG]?:Date().time
@@ -254,8 +243,7 @@ object StructureManager {
         return true
     }
 
-    private fun removeBlocks(pos1: Location,pos2: Location){
-
+    private fun place(pos1:Location,pos2:Location,structure: Structure){
         val world = pos1.world
 
         val minX = min(pos1.blockX,pos2.blockX)
@@ -274,19 +262,11 @@ object StructureManager {
             }
         }
 
-    }
+        Bukkit.getLogger().info("ブロックを削除")
 
-    //土地を削除する(メインスレッドで)
-    private fun removeEntities(pos1:Location, pos2:Location){
+        structure.place(pos1,true,StructureRotation.NONE,Mirror.NONE,0,1F, Random())
 
-        val world = pos1.world
-
-        val minX = min(pos1.blockX,pos2.blockX)
-        val minY = min(pos1.blockY,pos2.blockY)
-        val minZ = min(pos1.blockZ,pos2.blockZ)
-        val maxX = max(pos1.blockX,pos2.blockX)
-        val maxY = max(pos1.blockY,pos2.blockY)
-        val maxZ = max(pos1.blockZ,pos2.blockZ)
+        Bukkit.getLogger().info("設置")
 
         //エンティティを削除
         for (e in world.entities){
@@ -296,6 +276,7 @@ object StructureManager {
                 e.remove()
             }
         }
+        Bukkit.getLogger().info("エンティティを削除")
     }
 
     fun addPayment(p:Player,day:Int){
@@ -316,10 +297,10 @@ object StructureManager {
             return
         }
 
-        val cal = Calendar.getInstance()
-        cal.time = data.rentDue
-        cal.add(Calendar.DAY_OF_YEAR,day)
-        data.rentDue = cal.time
+
+        val date = LocalDateTime.ofInstant(data.rentDue.toInstant(), ZoneId.systemDefault())
+        date.plusDays(day.toLong())
+        data.rentDue = Date.from(date.toInstant(ZoneOffset.MIN))
 
         addressMap[p.uniqueId] = data
         saveAddress()
