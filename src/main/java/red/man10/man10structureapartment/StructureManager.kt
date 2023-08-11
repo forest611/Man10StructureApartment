@@ -199,6 +199,7 @@ object StructureManager {
         for (i in 0 until maxApartCount){
             if (filtered.any { it.sx == (i * distance).toDouble() })continue
             posX = (i * distance).toDouble()
+            break
         }
 
         if (posX == -1.0){
@@ -238,7 +239,7 @@ object StructureManager {
         //住所情報をJsonファイルに登録
         updateAddress(ApartData(uuid, pos1.x,pos1.y,pos1.z, pos2.x,pos2.y,pos2.z, Date(),date))
 
-        Bukkit.getLogger().info("アパートの設置完了(現在のアパート数:${addressMap.values}")
+        Bukkit.getLogger().info("アパートの設置完了(現在のアパート数:${addressMap.size}")
 
         return true
     }
@@ -288,6 +289,7 @@ object StructureManager {
                 if (!placeStructure(p.uniqueId)){
                     p.sendMessage("§c現在アパートは満室です")
                 }
+                p.sendMessage("§aアパートを確保しました。もう一度クリックしてください")
             }
             return
         }
@@ -296,7 +298,6 @@ object StructureManager {
             msg(p,"§c電子マネーが足りません")
             return
         }
-
 
         val date = LocalDateTime.ofInstant(data.rentDue.toInstant(), ZoneId.systemDefault())
         date.plusDays(day.toLong())
