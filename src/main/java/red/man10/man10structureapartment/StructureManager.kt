@@ -301,7 +301,7 @@ object StructureManager {
 
         val date = LocalDateTime.ofInstant(data.rentDue.toInstant(), ZoneId.systemDefault())
         date.plusDays(day.toLong())
-        data.rentDue = Date.from(date.toInstant(ZoneOffset.MIN))
+        data.rentDue = Date.from(date.toInstant(ZoneOffset.of("+9")))
 
         addressMap[p.uniqueId] = data
         saveAddress()

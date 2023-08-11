@@ -21,6 +21,7 @@ class MainMenu(p: Player) : MenuFramework(p, 9, "§b§l[CloudApartment]") {
 
         val jumpButton = Button(Material.OAK_DOOR)
         jumpButton.title("§a§lマンションにテレポートする")
+        jumpButton.lore(mutableListOf("§fマンションにテレポートします","初めて入居する場合は、左のボタンから利用料を払ってください"))
         jumpButton.setClickAction{
             p.performCommand("msa jump")
         }
