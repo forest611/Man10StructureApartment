@@ -369,5 +369,5 @@ data class ApartData(
     val ey : Double,
     val ez : Double,
     val lastAccess : Date,
-    var rentDue : Date
+    var rentDue : Date = Date()
 )
