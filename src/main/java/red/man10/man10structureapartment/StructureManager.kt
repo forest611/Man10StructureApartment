@@ -183,9 +183,9 @@ object StructureManager {
     fun placeStructure(uuid:UUID,location: Location? = null):Boolean{
 
         //アドレスがすでにある場合は建物があるとしてリターン
-        if (addressMap[uuid]!=null){
-            return true
-        }
+//        if (addressMap[uuid]!=null){
+//            return true
+//        }
 
         var posX = -1.0
         //利用中の部屋のリスト
