@@ -149,7 +149,9 @@ object StructureManager {
         }
 
         thread.execute {
+
             val file = File("${instance.dataFolder.path}/Apart/${uuid}")
+            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("MM_dd_HH_mm_ss").format(Date())}"))
 
             try {
                 if (!file.exists()){
@@ -369,5 +371,5 @@ data class ApartData(
     val ey : Double,
     val ez : Double,
     val lastAccess : Date,
-    var rentDue : Date
+    var rentDue : Date = Date()
 )
