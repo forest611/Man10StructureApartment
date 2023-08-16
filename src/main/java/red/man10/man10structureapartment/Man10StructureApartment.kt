@@ -1,5 +1,9 @@
 package red.man10.man10structureapartment
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.Component.text
+import net.kyori.adventure.text.event.ClickEvent
+import net.kyori.adventure.text.event.HoverEvent
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -15,8 +19,11 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.plugin.java.JavaPlugin
 import red.man10.man10structureapartment.StructureManager.jump
 import red.man10.man10structureapartment.StructureManager.pluginLoad
+import red.man10.man10structureapartment.StructureManager.restore
 import red.man10.man10structureapartment.StructureManager.saveStructure
 import red.man10.man10structureapartment.StructureManager.thread
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -93,6 +100,40 @@ class Man10StructureApartment : JavaPlugin(),Listener {
                 msg(sender,"保存しました。建物は手動で削除してください。")
             }
 
+            "backup" ->{
+                if (!sender.hasPermission(PERMISSION))return true
+
+                val uuid = UUID.fromString(args[1])
+
+                thread.execute {
+                    val list = StructureManager.getBackupList(uuid)
+
+                    msg(sender,"直近20件のバックアップを表示")
+
+                    for (i in 0 .. 19){
+                        if (list.size<=i)break
+                        val file = list[i]
+                        val date = Date(file.lastModified())
+                        sender.sendMessage(text(SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date)).clickEvent(
+                            ClickEvent.runCommand("/msa restore $uuid $i"))
+                            .hoverEvent(HoverEvent.showText(text("復元する"))))
+                    }
+                }
+            }
+
+            "restore" ->{
+                if (!sender.hasPermission(PERMISSION))return true
+
+                val uuid = UUID.fromString(args[1])
+                val index = args[2].toInt()
+
+                msg(sender,"復元中")
+                thread.execute {
+                    val ret = restore(uuid,index)
+                    msg(sender,"$ret")
+                }
+            }
+
             "pay" ->{
                 val day = args[1].toInt()
                 StructureManager.addPayment(sender,day)
@@ -102,6 +143,14 @@ class Man10StructureApartment : JavaPlugin(),Listener {
                 jump(sender)
             }
 
+            else ->{
+                if (!sender.hasPermission(PERMISSION))return true
+
+                msg(sender,"/msa reload ")
+                msg(sender,"/msa place <uuid> ")
+                msg(sender,"/msa save <uuid> ")
+                msg(sender,"/msa backup <uuid> ")
+            }
         }
 
         return true

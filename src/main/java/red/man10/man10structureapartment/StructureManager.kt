@@ -143,6 +143,7 @@ object StructureManager {
         structure.fill(pos1,pos2,true)
         structure.persistentDataContainer.set(NamespacedKey(instance,"RentDue"), PersistentDataType.LONG,data.rentDue.time)
 
+        //コマンドによる呼び出しの時は住所情報から消す
         if (op){
             addressMap.remove(uuid)
             saveAddress()
@@ -151,7 +152,7 @@ object StructureManager {
         thread.execute {
 
             val file = File("${instance.dataFolder.path}/Apart/${uuid}")
-            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("MM_dd_HH_mm_ss").format(Date())}"))
+            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date())}"))
 
             try {
                 if (!file.exists()){
@@ -351,6 +352,27 @@ object StructureManager {
         enter(p)
         msg(p,"§a§lマンションにジャンプしました")
         msg(p,"§a§l戻る時は§n§lドアを右クリック§a§lしてください")
+    }
+
+    fun getBackupList(uuid: UUID): List<File> {
+
+        val folder = File("${instance.dataFolder.path}/Apart/backup/${uuid}").listFiles()
+        if (folder.isNullOrEmpty()) return emptyList()
+
+        return folder.sortedByDescending { it.lastModified() }
+    }
+
+    fun restore(uuid: UUID, index:Int): Boolean {
+        val files = getBackupList(uuid)
+        if (files.size<=index)return false
+        val data = files[index]
+
+        val file = File("${instance.dataFolder.path}/Apart/${uuid}")
+        if (file.exists())file.delete()
+        data.copyTo(file)
+        addressMap.remove(uuid)
+        saveAddress()
+        return true
     }
 
     fun enter(p:Player){
