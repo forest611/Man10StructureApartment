@@ -303,6 +303,9 @@ object StructureManager {
         }
 
         var date = LocalDateTime.ofInstant(data.rentDue.toInstant(), ZoneId.systemDefault())
+        if (date.isBefore(LocalDateTime.now())) {
+            date = LocalDateTime.now()
+        }
         date = date.plusDays(day.toLong())
         data.rentDue = Date.from(date.toInstant(ZoneOffset.of("+9")))
 
