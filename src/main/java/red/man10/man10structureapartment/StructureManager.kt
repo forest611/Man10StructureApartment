@@ -151,10 +151,13 @@ object StructureManager {
 
         thread.execute {
 
-            val file = File("${instance.dataFolder.path}/Apart/${uuid}")
-            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date())}"))
-
             try {
+                val file = File("${instance.dataFolder.path}/Apart/${uuid}")
+                if (file.exists()){
+                    file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date())}"))
+                }
+
+
                 if (!file.exists()){
                     manager.saveStructure(file,structure)
                 }else{
