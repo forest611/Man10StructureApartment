@@ -41,7 +41,7 @@ object StructureManager {
     private lateinit var manager : StructureManager
     private lateinit var defaultBuilding : Structure
     private lateinit var vault : VaultManager
-    private lateinit var jump : Triple<Double,Double,Double>
+    private lateinit var jumpOffset : Triple<Double,Double,Double>
 
     val thread = Executors.newSingleThreadExecutor()
 
@@ -62,7 +62,7 @@ object StructureManager {
         val relativeY = instance.config.getDouble("RelativeY")
         val relativeZ = instance.config.getDouble("RelativeZ")
 
-        jump = Triple(relativeX,relativeY,relativeZ)
+        jumpOffset = Triple(relativeX,relativeY,relativeZ)
 
         loadDefault()
         loadAddress()
@@ -224,7 +224,7 @@ object StructureManager {
 
         val structure = if (file.exists()){
             //呼び出し前にバックアップをとっておく
-            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date())}"))
+            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date(file.lastModified()))}"))
             manager.loadStructure(file)
         } else {
             val default = File("${instance.dataFolder.path}/Apart/Default")
@@ -349,9 +349,9 @@ object StructureManager {
 
         val pos1 = Location(world,data.sx,data.sy,data.sz)
 
-        val spawnX = pos1.x+ jump.first
-        val spawnY = pos1.y+ jump.second
-        val spawnZ = pos1.z+ jump.third
+        val spawnX = pos1.x+ jumpOffset.first
+        val spawnY = pos1.y+ jumpOffset.second
+        val spawnZ = pos1.z+ jumpOffset.third
 
         val loc = Location(pos1.world,spawnX,spawnY,spawnZ)
 
