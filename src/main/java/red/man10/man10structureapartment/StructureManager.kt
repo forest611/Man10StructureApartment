@@ -158,11 +158,13 @@ object StructureManager {
                     file.copyTo(destination)
                 }
 
-                if (!file.exists()){
-                    manager.saveStructure(file,structure)
-                }else{
-                    manager.saveStructure(file,structure)
-                }
+                manager.saveStructure(file,structure)
+
+//                if (!file.exists()){
+//                    manager.saveStructure(file,structure)
+//                }else{
+//                    manager.saveStructure(file,structure)
+//                }
             }catch (e:Exception){
                 val p = Bukkit.getOfflinePlayer(uuid).name
                 Bukkit.getLogger().warning("アパートの保存に失敗！(持ち主:$p)")
