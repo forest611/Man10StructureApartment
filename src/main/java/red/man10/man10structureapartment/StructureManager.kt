@@ -153,8 +153,9 @@ object StructureManager {
 
             try {
                 val file = File("${instance.dataFolder.path}/Apart/${uuid}")
-                if (file.exists()){
-                    file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date())}"))
+                val destination = File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date())}")
+                if (file.exists() && !destination.exists()){
+                    file.copyTo(destination)
                 }
 
                 if (!file.exists()){
@@ -224,7 +225,8 @@ object StructureManager {
 
         val structure = if (file.exists()){
             //呼び出し前にバックアップをとっておく
-            file.copyTo(File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date(file.lastModified()))}"))
+            val destination = File("${instance.dataFolder.path}/Apart/backup/${uuid}/${SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(Date(file.lastModified()))}")
+            if (!destination.exists())file.copyTo(destination)
             manager.loadStructure(file)
         } else {
             val default = File("${instance.dataFolder.path}/Apart/Default")
