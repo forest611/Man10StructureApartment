@@ -6,7 +6,11 @@ import org.bukkit.entity.Player
 class MainMenu(p: Player) : MenuFramework(p, 9, "§b§l[CloudApartment]") {
 
     override fun init() {
-        fill(Button(Material.CYAN_STAINED_GLASS_PANE))
+
+        val fill = Button(Material.CYAN_STAINED_GLASS_PANE)
+        fill.setClickAction{ it.isCancelled = true }
+
+        fill(fill)
 
         val rentButton = Button(Material.GOLD_INGOT)
         rentButton.cmd(1)
